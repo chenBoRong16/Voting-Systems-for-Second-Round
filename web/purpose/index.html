@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>網站目的｜Top4 專案</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="../style.css" />
+  <script type="module">
+    import { renderMarkdownPage } from '../shared/mdpage.js';
+    const params = new URLSearchParams(window.location.search);
+    const DEFAULT_DOC = '../../docs/site-purpose.md';
+    const doc = params.get('doc') || DEFAULT_DOC;
+    const title = document.getElementById('pageTitle');
+    if (title) {
+      title.textContent = doc === DEFAULT_DOC
+        ? '網站目的'
+        : '網站目的（延伸閱讀）';
+    }
+    renderMarkdownPage({
+      container: document.getElementById('md'),
+      src: doc,
+    });
+  </script>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="nav">
+        <a href="../">← 回到入口</a>
+        <a href="../ballot-design/">我的選票設計</a>
+        <a href="../methods/">選制說明</a>
+        <a href="../round2/">第二輪測試</a>
+      </div>
+      <h1 id="pageTitle">網站目的</h1>
+      <p class="sub">本頁以 Markdown 文件呈現，方便長期維護。</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <article id="md" class="md"></article>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,11 @@
+# Build output
+_site/
+
+# Dependencies
+node_modules/
+
+# Editor/OS
+.DS_Store
+
+# Do not publish or track requirements folder
+requirement/

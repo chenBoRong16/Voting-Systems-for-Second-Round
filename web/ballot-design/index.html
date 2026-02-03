@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>我的選票設計｜Top4 專案</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="../style.css" />
+  <script type="module">
+    import { renderMarkdownPage } from '../shared/mdpage.js';
+    renderMarkdownPage({
+      container: document.getElementById('md'),
+      src: '../../docs/ballot-design.md',
+    });
+  </script>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="nav">
+        <a href="../">← 回到入口</a>
+        <a href="../purpose/">網站目的</a>
+        <a href="../methods/">選制說明</a>
+        <a href="../round2/">第二輪測試</a>
+      </div>
+      <h1>我的選票設計</h1>
+      <p class="sub">包含單排設計、第一偏好高亮等。</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <article id="md" class="md"></article>
+    </section>
+  </main>
+</body>
+</html>

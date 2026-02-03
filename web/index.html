@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Top4 專案：網站們</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <h1>Top4 專案：網站們</h1>
+      <p class="sub">面向大眾與專家：以「單輪簡單多數（只看第一志願）」替代方案作為參考，並提供可互動的第二輪選制測試。</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2 class="h2">網站入口</h2>
+      <p class="hint">本站把內容拆成多個子站，避免資訊與工具擠在同一頁。</p>
+
+      <div class="siteGrid">
+        <a class="siteCard" href="./purpose/">
+          <div class="siteTitle">網站目的</div>
+          <div class="siteDesc">這系列網站為何存在、想解決什麼問題、適用情境與限制。</div>
+        </a>
+
+        <a class="siteCard" href="./ballot-design/">
+          <div class="siteTitle">我的選票設計</div>
+          <div class="siteDesc">選票格式（含單排設計）、第一偏好高亮等設計動機與使用方式。</div>
+        </a>
+
+        <a class="siteCard" href="./methods/">
+          <div class="siteTitle">選制說明</div>
+          <div class="siteDesc">面向非政治系的大眾：各選制的直覺、計票步驟、優缺點。</div>
+        </a>
+
+        <a class="siteCard" href="./round2/">
+          <div class="siteTitle">第二輪測試網站</div>
+          <div class="siteDesc">互動調整得票/偏好分布，單獨測試「第二輪」各選制結果與過程。</div>
+        </a>
+      </div>
+
+      <div class="small" style="margin-top:12px">
+        建議啟動本機 HTTP server 後再開啟（避免 ES Modules 在 file:// 受限）。
+      </div>
+    </section>
+  </main>
+</body>
+</html>
