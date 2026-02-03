@@ -26,6 +26,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Prepare site (exclude requirement/)
         run: |
           mkdir -p _site
@@ -35,6 +38,14 @@ jobs:
             --exclude '.github/' \
             --exclude '_site/' \
             ./ _site/
+
+      - name: Sanity check
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f _site/index.html
+          echo "_site contains:" 
+          ls -la _site | sed -n '1,200p'
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
