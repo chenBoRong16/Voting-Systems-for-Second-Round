@@ -146,52 +146,65 @@
             <div id="summary" class="summary"></div>
           </details>
 
-          <div id="irvViz" class="viz">
-            <div class="vizHeader">
-              <h2 class="h2">IRV 多輪 Sankey</h2>
-              <div class="hint">每一輪顯示當輪計入的票流；被淘汰者的票會依下一偏好轉移。把鼠標移到色塊上可看累積票數與百分比。</div>
+          <h2 class="h2">IRV 多輪 Sankey</h2>
+          <details class="summaryDetails" open>
+            <summary>顯示/隱藏：IRV 多輪 Sankey</summary>
+            <div id="irvViz" class="viz">
+              <div class="vizHeader">
+                <div class="hint">每一輪顯示當輪計入的票流；被淘汰者的票會依下一偏好轉移。把鼠標移到色塊上可看累積票數與百分比。</div>
+              </div>
+              <div id="sankeyContainer" class="sankey"></div>
             </div>
-            <div id="sankeyContainer" class="sankey"></div>
+          </details>
+
+          <div id="rpSection" style="display:none">
+            <h2 class="h2">Ranked Pairs 視覺化</h2>
+            <details class="summaryDetails" open>
+              <summary>顯示/隱藏：Ranked Pairs 視覺化</summary>
+              <div id="rpViz" class="viz" style="display:none">
+                <div class="vizHeader">
+                  <div class="hint">用節點與箭頭表示鎖定後的勝負關係，並列出最終排序。</div>
+                </div>
+                <div class="rpWrap">
+                  <div>
+                    <div class="small" style="margin-bottom:6px">Pairwise 矩陣</div>
+                    <div id="pairwiseContainer" class="pairwise"></div>
+                  </div>
+                  <div>
+                    <div class="small" style="margin-bottom:6px">勝負圖（已標記鎖定）</div>
+                    <div id="rpGraphContainer" class="rpGraph"></div>
+                    <div class="small" style="margin-bottom:6px">Ranked Pairs 排名</div>
+                    <div id="rpOrder" class="rpOrder"></div>
+                    <div class="small" style="margin:8px 0 6px">孔多賽排名</div>
+                    <div id="condorcetOrder" class="rpOrder"></div>
+                  </div>
+                </div>
+              </div>
+            </details>
           </div>
 
-          <div id="rpViz" class="viz" style="display:none">
-            <div class="vizHeader">
-              <h2 class="h2">Ranked Pairs 視覺化</h2>
-              <div class="hint">用節點與箭頭表示鎖定後的勝負關係，並列出最終排序。</div>
-            </div>
-            <div class="rpWrap">
-              <div>
-                <div class="small" style="margin-bottom:6px">Pairwise 矩陣</div>
-                <div id="pairwiseContainer" class="pairwise"></div>
+          <div id="condorcetSection">
+            <h2 class="h2">兩兩對決 / 孔多賽排名</h2>
+            <details class="summaryDetails" open>
+              <summary>顯示/隱藏：兩兩對決 / 孔多賽排名</summary>
+              <div id="condorcetViz" class="viz">
+                <div class="vizHeader">
+                  <div class="hint">用 pairwise 矩陣觀察兩兩對決結果，並依勝場數給出孔多賽排序（含平手註記）。</div>
+                </div>
+                <div class="rpWrap">
+                  <div>
+                    <div class="small" style="margin-bottom:6px">Pairwise 矩陣</div>
+                    <div id="condorcetPairwise" class="pairwise"></div>
+                  </div>
+                  <div>
+                    <div class="small" style="margin-bottom:6px">勝負圖（pairwise arrows）</div>
+                    <div id="condorcetGraph" class="rpGraph"></div>
+                    <div class="small" style="margin-bottom:6px">孔多賽排名</div>
+                    <div id="condorcetOrderStandalone" class="rpOrder"></div>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div class="small" style="margin-bottom:6px">勝負圖（已標記鎖定）</div>
-                <div id="rpGraphContainer" class="rpGraph"></div>
-                <div class="small" style="margin-bottom:6px">Ranked Pairs 排名</div>
-                <div id="rpOrder" class="rpOrder"></div>
-                <div class="small" style="margin:8px 0 6px">孔多賽排名</div>
-                <div id="condorcetOrder" class="rpOrder"></div>
-              </div>
-            </div>
-          </div>
-
-          <div id="condorcetViz" class="viz" style="display:none">
-            <div class="vizHeader">
-              <h2 class="h2">兩兩對決 / 孔多賽排名</h2>
-              <div class="hint">用 pairwise 矩陣觀察兩兩對決結果，並依勝場數給出孔多賽排序（含平手註記）。</div>
-            </div>
-            <div class="rpWrap">
-              <div>
-                <div class="small" style="margin-bottom:6px">Pairwise 矩陣</div>
-                <div id="condorcetPairwise" class="pairwise"></div>
-              </div>
-              <div>
-                <div class="small" style="margin-bottom:6px">勝負圖（pairwise arrows）</div>
-                <div id="condorcetGraph" class="rpGraph"></div>
-                <div class="small" style="margin-bottom:6px">孔多賽排名</div>
-                <div id="condorcetOrderStandalone" class="rpOrder"></div>
-              </div>
-            </div>
+            </details>
           </div>
         </div>
       </div>
@@ -199,7 +212,10 @@
 
     <section class="card">
       <h2 class="h2">結算過程與結果</h2>
-      <div id="explain" class="explain"></div>
+      <details class="summaryDetails" open>
+        <summary>顯示/隱藏：結算過程與結果</summary>
+        <div id="explain" class="explain"></div>
+      </details>
     </section>
 
     <footer class="footer">

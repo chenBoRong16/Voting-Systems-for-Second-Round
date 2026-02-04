@@ -50,10 +50,12 @@ const els = {
   irvViz: document.getElementById('irvViz'),
   sankeyContainer: document.getElementById('sankeyContainer'),
   rpViz: document.getElementById('rpViz'),
+  rpSection: document.getElementById('rpSection'),
   pairwiseContainer: document.getElementById('pairwiseContainer'),
   rpGraphContainer: document.getElementById('rpGraphContainer'),
   rpOrder: document.getElementById('rpOrder'),
   condorcetOrder: document.getElementById('condorcetOrder'),
+  condorcetSection: document.getElementById('condorcetSection'),
   condorcetViz: document.getElementById('condorcetViz'),
   condorcetPairwise: document.getElementById('condorcetPairwise'),
   condorcetGraph: document.getElementById('condorcetGraph'),
@@ -1040,18 +1042,26 @@ function recomputeAndRender() {
   const system = els.system.value;
   const activeIds = getActiveCandidateIds();
   const candidateNameById = getCandidateNameById();
-  if (els.irvViz) els.irvViz.style.display = 'none';
+  if (els.irvViz) els.irvViz.style.display = '';
   if (els.rpViz) els.rpViz.style.display = 'none';
-  if (els.condorcetViz) els.condorcetViz.style.display = 'none';
+  if (els.rpSection) els.rpSection.style.display = 'none';
+
+  const irvAll = runIRV({ candidates: activeIds, ballots });
+  renderIRVSankey(irvAll);
+
+  const showCondorcet = system !== 'rankedPairs';
+  if (els.condorcetSection) els.condorcetSection.style.display = showCondorcet ? '' : 'none';
+  if (showCondorcet) {
+    const pairwise = computePairwiseMatrix({ candidates: activeIds, ballots });
+    renderCondorcetViz(pairwise);
+  }
   if (system === 'irv') {
-    if (els.irvViz) els.irvViz.style.display = '';
-    const irv = runIRV({ candidates: activeIds, ballots });
-    renderExplain({ explain: buildIRVExplain(irv) });
-    renderIRVSankey(irv);
+    renderExplain({ explain: buildIRVExplain(irvAll) });
     return;
   }
 
   if (system === 'rankedPairs') {
+    if (els.rpSection) els.rpSection.style.display = '';
     if (els.rpViz) els.rpViz.style.display = '';
     const rp = runRankedPairs({ candidates: activeIds, ballots });
     renderRankedPairsViz(rp);
@@ -1072,19 +1082,11 @@ function recomputeAndRender() {
   }
   if (system === 'minimax') {
     const res = runMinimax({ candidates: activeIds, ballots });
-    if (els.condorcetViz) els.condorcetViz.style.display = '';
-    renderCondorcetViz(res.pairwise);
     renderExplain({ explain: mapExplainWithNames(res.explain, candidateNameById, activeIds) });
     return;
   }
   if (system === 'benham') {
     const res = runBenham({ candidates: activeIds, ballots });
-    if (els.irvViz) els.irvViz.style.display = '';
-    if (els.condorcetViz) els.condorcetViz.style.display = '';
-    const irv = runIRV({ candidates: activeIds, ballots });
-    renderIRVSankey(irv);
-    const pairwise = computePairwiseMatrix({ candidates: activeIds, ballots });
-    renderCondorcetViz(pairwise);
     // Provide a fuller step-by-step from rounds
     const steps = (res.rounds ?? []).map((rd) => {
       const names = (rd.active ?? []).map((cid) => candidateNameById[cid]);
