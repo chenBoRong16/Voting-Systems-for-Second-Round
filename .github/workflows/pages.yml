@@ -26,6 +26,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Generate updates manifest
+        run: |
+          python3 scripts/gen_updates_manifest.py
+
       - name: Prepare site (exclude requirement/)
         run: |
           mkdir -p _site

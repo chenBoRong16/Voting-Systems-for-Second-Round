@@ -6,41 +6,120 @@
   <title>網站目的｜Top4 專案</title>
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="../style.css" />
+  <style>
+    /* Doc-view mode: the page already has a title in the header. */
+    body.docView article.md > h1:first-child{ display:none; }
+  </style>
   <script type="module">
-    import { renderMarkdownPage } from '../shared/mdpage.js';
+    import { renderSiteNav } from '../shared/nav.js';
     const params = new URLSearchParams(window.location.search);
     const DEFAULT_DOC = '../../docs/site-purpose.md';
-    const doc = params.get('doc') || DEFAULT_DOC;
-    const title = document.getElementById('pageTitle');
-    if (title) {
-      title.textContent = doc === DEFAULT_DOC
-        ? '網站目的'
-        : '網站目的（延伸閱讀）';
-    }
-    renderMarkdownPage({
-      container: document.getElementById('md'),
-      src: doc,
+    const doc = params.get('doc');
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      renderSiteNav({ container: document.getElementById('siteNav') });
+
+      const title = document.getElementById('pageTitle');
+      const back = document.getElementById('backToPurpose');
+      const htmlView = document.getElementById('htmlView');
+      const mdView = document.getElementById('mdView');
+
+      const isDocView = Boolean(doc);
+
+      if (title) title.textContent = isDocView ? '網站目的（延伸閱讀）' : '網站目的';
+      if (back) back.style.display = isDocView ? 'inline-flex' : 'none';
+      if (htmlView) htmlView.style.display = isDocView ? 'none' : 'block';
+      if (mdView) mdView.style.display = isDocView ? 'block' : 'none';
+
+      if (!isDocView) return;
+      document.body.classList.add('docView');
+
+      const { renderMarkdownPage } = await import('../shared/mdpage.js');
+      renderMarkdownPage({
+        container: document.getElementById('md'),
+        tocContainer: document.getElementById('toc'),
+        src: doc || DEFAULT_DOC,
+      });
     });
   </script>
 </head>
-<body>
+<body data-page="purpose">
   <header class="header">
     <div class="container">
-      <div class="nav">
-        <a href="../">← 回到入口</a>
-        <a href="../ballot-design/">我的選票設計</a>
-        <a href="../methods/">選制說明</a>
-        <a href="../round2/">第二輪測試</a>
-        <a href="../updates/">更新內容</a>
-      </div>
+      <nav class="nav" id="siteNav"></nav>
       <h1 id="pageTitle">網站目的</h1>
-      <p class="sub">本頁以 Markdown 文件呈現，方便長期維護。</p>
+      <p class="sub">快速說清楚：這個網站在比較什麼、沒比較什麼，以及名詞怎麼用。</p>
     </div>
   </header>
 
-  <main class="container">
+  <main id="main" class="container">
     <section class="card">
-      <article id="md" class="md"></article>
+      <div class="backBar">
+        <a id="backToPurpose" class="backLink" href="./">← 回到網站目的</a>
+      </div>
+
+      <div id="htmlView">
+        <p class="hint" style="margin-top:0">
+          本專案做的是一件事：用「說得清楚的文件」與「可重現的互動工具」，讓人能比較不同選制在同一份偏好下會產生什麼結果。
+        </p>
+        <p class="hint">
+          另外，本專案也想補上一段常被忽略的工程直覺：Top4 的設計能讓更複雜但更有表達力的選制在現實中更可實作（例如 IRV、孔多賽系列）。
+          當總候選人數很多時，直接在單輪要求完整排序會遇到選票過長、人工查核困難等門檻；先用第一輪把人數縮到 4，再在第二輪使用排序票，能把這些方法落在可操作的範圍內。
+        </p>
+
+        <h2 class="h2" style="margin-top:14px">30 秒版本（給第一次來的人）</h2>
+        <ul class="notesList">
+          <li><b>第一輪（Top4）</b>：每張票只選 1 位（不排序），用簡單多數把候選人縮到 4 人。</li>
+          <li><b>第二輪（決勝）</b>：在這些候選人中，用「完整排序票」的選制決定勝者（IRV / Borda / Ranked Pairs / Benham / Minimax）。</li>
+          <li>按本專案假設：若總候選人數 ≤ 1，視為無需辦理選舉；若總候選人數為 2～4，第一輪不會淘汰任何人，因此可直接跳過第一輪、從第二輪開始（第二輪候選人數為 2～4）。</li>
+          <li>（補充）即使採用 Top4，第二輪仍可能因退選、資格等原因少於 4 人。</li>
+        </ul>
+
+        <h2 class="h2" style="margin-top:14px">為什麼要拆成兩輪</h2>
+        <p class="hint">第一輪只在候選人過多時才需要：候選人太多會讓選票過長、難以人工查找與查核；最後可能被迫集中計票或改成電子計票，進而增加對選制的不信任。</p>
+        <ul class="notesList">
+          <li>用第一輪把「選票需要承載的候選人數」控制在可讀可算的範圍（Top4）。</li>
+          <li>然後把討論重心放在第二輪：當候選人集合固定時，各種選制怎麼把偏好資訊轉成結果。</li>
+        </ul>
+
+        <h2 class="h2" style="margin-top:14px">給專家/研究者：這個網站的定位</h2>
+        <ul class="notesList">
+          <li>互動工具刻意聚焦在「第二輪、候選人集合固定」的比較，讓結果差異可歸因到規則本身。</li>
+          <li>第二輪工具支援 2～4 人的完整排序票，並輸出結算過程（含 pairwise 矩陣/孔多賽視圖）。</li>
+          <li>方法論與限制/假設（例如平手處理、排序 tie-break）會在各選制說明頁中明示。</li>
+        </ul>
+
+        <h2 class="h2" style="margin-top:14px">本專案把內容與工具拆成多頁</h2>
+        <p class="hint">提示：這裡請不要點選跳頁；要切換頁面請用上方導覽列。</p>
+        <ul class="notesList">
+          <li><b>網站目的（本頁）</b>：名詞、範圍、適用情境與限制。</li>
+          <li>我的選票設計：選票如何呈現、為何這樣設計。</li>
+          <li>Top4 兩輪構想（方法論）：為何拆兩輪、第一輪/第二輪分工、落地與推廣設計要點。</li>
+          <li>選制說明：逐一介紹第二輪選制（直覺、步驟、優缺點、例子）。</li>
+          <li>第二輪選制測試：輸入完整排序票，切換選制對比結算過程與結果。</li>
+          <li>更新內容：最近的更新日誌。</li>
+        </ul>
+
+        <h2 class="h2" style="margin-top:14px">延伸閱讀</h2>
+        <ul class="notesList">
+          <li>Top4 兩輪構想（方法論）</li>
+        </ul>
+
+        <h2 class="h2" style="margin-top:14px">重要提醒：第二輪選制測試不包含第一輪</h2>
+        <p class="hint">「第二輪選制測試」頁刻意不做第一輪候選人篩選，因為：</p>
+        <ul class="notesList">
+          <li>第一輪在做的是「候選人篩選」，第二輪在做的是「從固定候選人集合中決定勝者」。</li>
+          <li>把兩者混在一起會讓討論變亂；本專案希望在候選人集合固定的前提下，比較第二輪規則本身差異。</li>
+        </ul>
+        <p class="hint">若你想把第一輪也一起討論：建議把「第一輪如何產生 Top4」視為另一個模型層，再把它輸出的候選人集合丟進第二輪工具做比較。</p>
+      </div>
+
+      <div id="mdView" style="display:none">
+        <div class="mdLayout">
+          <aside id="toc" class="toc"></aside>
+          <article id="md" class="md"></article>
+        </div>
+      </div>
     </section>
   </main>
 </body>

@@ -2,231 +2,60 @@
 
 本專案目前使用的是「完整排序票」：每張票對所有候選人給出完整排名（無並列）。
 
-## 兩種呈現方式
+註：若總候選人數 ≤ 1：按本專案假設視為無需辦理選舉；若總候選人數為 2～4：第一輪不會淘汰任何人，因此可以直接跳過第一輪、從第二輪開始（第二輪候選人數就是 2～4 人）。另外，即使採用 Top4，第二輪候選人數仍可能因退選、資格等原因變成 2/3 人；網站範例也因此提供 2/3/4 位候選人的示意。
 
-### 1) 矩陣票（Matrix ballot）
+## 矩陣票（Matrix ballot）
 
-在互動工具中，使用「矩陣」把所有排列選項列出：
+矩陣票用「欄」來代表一種完整排序（例如：A → B → C → D）：
 
-- 每一欄是一種完整排序（例如：A → B → C → D）
-- 每一欄對應一個可輸入的票數
-- 所有格子都會顯示該候選人在該排序中的名次（1~N）
+- 每一欄是一種完整排序
+- 每一欄對應一個票數（同樣排序有幾張票）
+- 每個格子顯示該候選人在該排序中的名次（1~N）
 
-**第一偏好高亮**：
-- 所有名次為 1 的格子會被高亮，讓「第一志願分布」更直觀。
+另外，通常會把「名次 = 1」的格子高亮，讓第一名分布更直觀。
 
-### 2) 單排設計（Single-row design）
+## 矩陣票的兩種排版（都是同一種票）
 
-在「直接選舉」或人工查找情境下，單排（把所有選項排成一列）更容易：
+重點：**單排 / 雙排只是排版差異**，兩者都屬於矩陣票。
 
-- 快速掃描
-- 快速對照選項編號
-- 適合紙本/人工查票
+### 1) 矩陣票（單排顯示）
 
-> 本專案的互動工具在 4 人、24 選項時，為避免螢幕橫向超出，會分兩排顯示（每排 12 選項）。
+把所有選項排成一列，較適合：
+
+- 直接選舉情境的紙本填寫
+- 人工查找/人工查票（更容易掃描、對照選項編號）
+
+### 2) 矩陣票（雙排顯示）
+
+同一種矩陣票，為了避免螢幕橫向超出，會把選項拆成上下兩排（例如每排 12 選項）。
 
 ## 範例（視覺示意）
 
-**範例 1：單排 24 選項（左右側 + 中間有候選人姓名）**
+完整的 24 選項示意表放在網站頁面（方便左右滑動觀看）：
 
-<div class="tableWrap">
-  <table class="matrixTable exampleTable">
-    <thead>
-      <tr>
-        <th class="matrixLeft matrixHeadLeft">勾選（只能勾 1 格）</th>
-        <th class="matrixHeadOpt">①</th>
-        <th class="matrixHeadOpt">②</th>
-        <th class="matrixHeadOpt">③</th>
-        <th class="matrixHeadOpt">④</th>
-        <th class="matrixHeadOpt">⑤</th>
-        <th class="matrixHeadOpt">⑥</th>
-        <th class="matrixHeadOpt">⑦</th>
-        <th class="matrixHeadOpt">⑧</th>
-        <th class="matrixHeadOpt">⑨</th>
-        <th class="matrixHeadOpt">⑩</th>
-        <th class="matrixHeadOpt">⑪</th>
-        <th class="matrixHeadOpt">⑫</th>
-        <th class="matrixMid matrixHeadOpt matrixMidPlain">勾選（只能勾 1 格）</th>
-        <th class="matrixHeadOpt">⑬</th>
-        <th class="matrixHeadOpt">⑭</th>
-        <th class="matrixHeadOpt">⑮</th>
-        <th class="matrixHeadOpt">⑯</th>
-        <th class="matrixHeadOpt">⑰</th>
-        <th class="matrixHeadOpt">⑱</th>
-        <th class="matrixHeadOpt">⑲</th>
-        <th class="matrixHeadOpt">⑳</th>
-        <th class="matrixHeadOpt">㉑</th>
-        <th class="matrixHeadOpt">㉒</th>
-        <th class="matrixHeadOpt">㉓</th>
-        <th class="matrixHeadOpt">㉔</th>
-        <th class="matrixRight matrixHeadRight">勾選（只能勾 1 格）</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td class="matrixLeft"></td>
-        <td>□</td><td>□</td><td>□</td><td>□</td><td>□</td><td>□</td>
-        <td>□</td><td>□</td><td>□</td><td>□</td><td>□</td><td>□</td>
-        <td class="matrixMid"></td><td>□</td><td>□</td><td>□</td><td>□</td><td>□</td><td>□</td>
-        <td>□</td><td>□</td><td>□</td><td>□</td><td>□</td><td>□</td>
-        <td class="matrixRight"></td>
-      </tr>
-      <tr>
-        <td class="matrixLeft">王小明</td>
-        <td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td>
-        <td class="rank2">2</td><td class="rank2">2</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td>
-        <td class="matrixMid matrixMidName">王小明</td><td class="rank2">2</td><td class="rank2">2</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td>
-        <td class="rank2">2</td><td class="rank2">2</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td>
-        <td class="matrixRight">王小明</td>
-      </tr>
-      <tr>
-        <td class="matrixLeft">李小華</td>
-        <td class="rank2">2</td><td class="rank2">2</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td>
-        <td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td>
-        <td class="matrixMid matrixMidName">李小華</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank2">2</td><td class="rank2">2</td><td class="rank4">4</td><td class="rank3">3</td>
-        <td class="rank3">3</td><td class="rank4">4</td><td class="rank2">2</td><td class="rank2">2</td><td class="rank4">4</td><td class="rank3">3</td>
-        <td class="matrixRight">李小華</td>
-      </tr>
-      <tr>
-        <td class="matrixLeft">陳小傑</td>
-        <td class="rank3">3</td><td class="rank4">4</td><td class="rank2">2</td><td class="rank2">2</td><td class="rank4">4</td><td class="rank3">3</td>
-        <td class="rank3">3</td><td class="rank4">4</td><td class="rank2">2</td><td class="rank2">2</td><td class="rank4">4</td><td class="rank3">3</td>
-        <td class="matrixMid matrixMidName">陳小傑</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td>
-        <td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank2">2</td><td class="rank2">2</td>
-        <td class="matrixRight">陳小傑</td>
-      </tr>
-      <tr>
-        <td class="matrixLeft">林小美</td>
-        <td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank2">2</td><td class="rank2">2</td>
-        <td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank2">2</td><td class="rank2">2</td>
-        <td class="matrixMid matrixMidName">林小美</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank2">2</td><td class="rank2">2</td>
-        <td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td>
-        <td class="matrixRight">林小美</td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+- [web/ballot-design/](../web/ballot-design/)
 
-**範例 2：雙排 12 選項（左右側有候選人姓名）**
+範例包含：
 
-<div class="matrixTables">
-  <div class="tableWrap">
-    <table class="matrixTable exampleTable">
-      <thead>
-        <tr>
-          <th class="matrixLeft matrixHeadLeft">勾選（只能勾 1 格）</th>
-          <th class="matrixHeadOpt">①</th>
-          <th class="matrixHeadOpt">②</th>
-          <th class="matrixHeadOpt">③</th>
-          <th class="matrixHeadOpt">④</th>
-          <th class="matrixHeadOpt">⑤</th>
-          <th class="matrixHeadOpt">⑥</th>
-          <th class="matrixHeadOpt">⑦</th>
-          <th class="matrixHeadOpt">⑧</th>
-          <th class="matrixHeadOpt">⑨</th>
-          <th class="matrixHeadOpt">⑩</th>
-          <th class="matrixHeadOpt">⑪</th>
-          <th class="matrixHeadOpt">⑫</th>
-          <th class="matrixRight matrixHeadRight">勾選（只能勾 1 格）</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="matrixLeft"></td>
-          <td>□</td><td>□</td><td>□</td><td>□</td><td>□</td><td>□</td>
-          <td>□</td><td>□</td><td>□</td><td>□</td><td>□</td><td>□</td>
-          <td class="matrixRight"></td>
-        </tr>
-        <tr>
-          <td class="matrixLeft">王小明</td>
-          <td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td>
-          <td class="rank2">2</td><td class="rank2">2</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td>
-          <td class="matrixRight">王小明</td>
-        </tr>
-        <tr>
-          <td class="matrixLeft">李小華</td>
-          <td class="rank2">2</td><td class="rank2">2</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td>
-          <td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td>
-          <td class="matrixRight">李小華</td>
-        </tr>
-        <tr>
-          <td class="matrixLeft">陳小傑</td>
-          <td class="rank3">3</td><td class="rank4">4</td><td class="rank2">2</td><td class="rank2">2</td><td class="rank4">4</td><td class="rank3">3</td>
-          <td class="rank3">3</td><td class="rank4">4</td><td class="rank2">2</td><td class="rank2">2</td><td class="rank4">4</td><td class="rank3">3</td>
-          <td class="matrixRight">陳小傑</td>
-        </tr>
-        <tr>
-          <td class="matrixLeft">林小美</td>
-          <td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank2">2</td><td class="rank2">2</td>
-          <td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank2">2</td><td class="rank2">2</td>
-          <td class="matrixRight">林小美</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-  <div class="tableWrap">
-    <table class="matrixTable exampleTable">
-      <thead>
-        <tr>
-          <th class="matrixLeft matrixHeadLeft">勾選（只能勾 1 格）</th>
-          <th class="matrixHeadOpt">⑬</th>
-          <th class="matrixHeadOpt">⑭</th>
-          <th class="matrixHeadOpt">⑮</th>
-          <th class="matrixHeadOpt">⑯</th>
-          <th class="matrixHeadOpt">⑰</th>
-          <th class="matrixHeadOpt">⑱</th>
-          <th class="matrixHeadOpt">⑲</th>
-          <th class="matrixHeadOpt">⑳</th>
-          <th class="matrixHeadOpt">㉑</th>
-          <th class="matrixHeadOpt">㉒</th>
-          <th class="matrixHeadOpt">㉓</th>
-          <th class="matrixHeadOpt">㉔</th>
-          <th class="matrixRight matrixHeadRight">勾選（只能勾 1 格）</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td class="matrixLeft"></td>
-          <td>□</td><td>□</td><td>□</td><td>□</td><td>□</td><td>□</td>
-          <td>□</td><td>□</td><td>□</td><td>□</td><td>□</td><td>□</td>
-          <td class="matrixRight"></td>
-        </tr>
-        <tr>
-          <td class="matrixLeft">王小明</td>
-          <td class="rank2">2</td><td class="rank2">2</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td>
-          <td class="rank2">2</td><td class="rank2">2</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td>
-          <td class="matrixRight">王小明</td>
-        </tr>
-        <tr>
-          <td class="matrixLeft">李小華</td>
-          <td class="rank3">3</td><td class="rank4">4</td><td class="rank2">2</td><td class="rank2">2</td><td class="rank4">4</td><td class="rank3">3</td>
-          <td class="rank3">3</td><td class="rank4">4</td><td class="rank2">2</td><td class="rank2">2</td><td class="rank4">4</td><td class="rank3">3</td>
-          <td class="matrixRight">李小華</td>
-        </tr>
-        <tr>
-          <td class="matrixLeft">陳小傑</td>
-          <td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td>
-          <td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank2">2</td><td class="rank2">2</td>
-          <td class="matrixRight">陳小傑</td>
-        </tr>
-        <tr>
-          <td class="matrixLeft">林小美</td>
-          <td class="rank4">4</td><td class="rank3">3</td><td class="rank4">4</td><td class="rank3">3</td><td class="rank2">2</td><td class="rank2">2</td>
-          <td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td><td class="rank1">1</td>
-          <td class="matrixRight">林小美</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-</div>
+- 矩陣票（單排顯示）24 選項（左右側 + 中間有候選人姓名）
+- 矩陣票（雙排顯示）每排 12 選項（上下兩排同步水平捲動）
 
 ## 為什麼用「完整排序」
 
 - 能支援多種排序選制（IRV、Ranked Pairs、Borda、Benham、Minimax…）
 - 可在同一份資料上切換選制，做可重現的比較
 
+## 投票前查詢（縮短現場填票時間）
+
+若你把本設計想像成「真實選舉」的選票：即使選票上有完整排序選項，選民也不必在投票所現場慢慢找。
+
+一個務實流程是：
+
+1. 投票前先在網站/App 選出自己的排序（例如：`1.B 2.C 3.A 4.D`）
+2. 系統回傳對應的「選項編號」
+3. 到現場直接填該編號（或勾選該欄），縮短填票與查找時間
+
 ## 你可能會在意的限制
 
-- 一次將所有選票列好，跟選民自行填寫序數比，降低了計票成本，但會增加選民的辨識選項成本。
-  故用於單排的直接選舉選票，我高亮第一偏好，並在中間插入候選人姓名，降低選民辨識選項成本。
-- 在真實大選規模下，會需要更好的介面與更清楚的教育（本專案的「選制說明」子站就是為此存在）
+- 一次列出所有排序選項，會降低計票成本，但也會增加選民辨識選項的成本；因此單排示意會加入候選人姓名，並高亮第一名，降低辨識負擔。
+- 真實大選規模下，需要更好的介面與更清楚的教育（本專案的「選制說明」頁面就是為此存在）。

@@ -10,6 +10,8 @@ import {
   computePairwiseMatrix,
 } from './voting.js';
 
+import { bindDetailsPopover } from './shared/details-popover.js';
+
 const ALL_CANDIDATES = [
   { id: 'A', defaultName: '王小明' },
   { id: 'B', defaultName: '李小華' },
@@ -159,7 +161,14 @@ function randomizeCounts() {
 }
 
 function getActiveCandidateIds() {
-  const n = Number(els.candidateCount.value);
+  const raw = Number(els.candidateCount?.value);
+  const maxN = ALL_CANDIDATES.length;
+  let n = Number.isFinite(raw) ? Math.floor(raw) : maxN;
+  // This tool/page is intended for 2–4 candidates. If <=1, the project assumes the election is unnecessary.
+  n = Math.max(2, Math.min(maxN, n));
+  if (els.candidateCount && String(els.candidateCount.value) !== String(n)) {
+    els.candidateCount.value = String(n);
+  }
   return ALL_CANDIDATES.slice(0, n).map((c) => c.id);
 }
 
@@ -249,7 +258,7 @@ function renderMatrixTable() {
 
     const thLeft = document.createElement('th');
     thLeft.className = 'matrixLeft matrixHeadLeft';
-    thLeft.textContent = '勾選（只能勾 1 格）';
+    thLeft.textContent = '只能勾選 1 格';
     headRow.appendChild(thLeft);
 
     for (let i = 0; i < part.length; i++) {
@@ -264,7 +273,7 @@ function renderMatrixTable() {
 
     const thRight = document.createElement('th');
     thRight.className = 'matrixRight matrixHeadRight';
-    thRight.textContent = '勾選（只能勾 1 格）';
+    thRight.textContent = '只能勾選 1 格';
     headRow.appendChild(thRight);
 
     thead.appendChild(headRow);
@@ -400,7 +409,7 @@ function renderFinder() {
     const wrap = document.createElement('div');
     const label = document.createElement('div');
     label.className = 'small';
-    label.textContent = `第 ${i + 1} 偏好`;
+    label.textContent = `第 ${i + 1} 名`;
     const select = document.createElement('select');
 
     const placeholder = document.createElement('option');
@@ -435,7 +444,7 @@ function handleFinderQuery() {
   if (!els.finderResult) return;
   const activeIds = getActiveCandidateIds();
   if (finderSelections.length !== activeIds.length || finderSelections.some((v) => !v)) {
-    els.finderResult.textContent = '請先選滿所有偏好。';
+    els.finderResult.textContent = '請先選滿所有名次。';
     return;
   }
   const uniq = new Set(finderSelections);
@@ -475,7 +484,7 @@ function renderSummary(ballots) {
     return `
       <div class="summaryRow">
         <div>${escapeHtml(candidateNameById[cid])}</div>
-        <div class="badge">第一偏好 ${v}（${pct}%）</div>
+        <div class="badge">第一名 ${v}（${pct}%）</div>
       </div>
     `;
   }).join('');
@@ -484,9 +493,9 @@ function renderSummary(ballots) {
     <div class="summaryRow"><div>候選人數</div><div class="badge">${activeIds.length}</div></div>
     <div class="summaryRow"><div>選項數</div><div class="badge">${options.length}</div></div>
     <div class="summaryRow"><div>總票數</div><div class="badge">${total}</div></div>
-    <div style="margin-top:10px; color: rgba(17,24,39,0.75)">第一偏好分布</div>
+    <div style="margin-top:10px; color: rgba(17,24,39,0.75)">第一名分布</div>
     ${rows}
-    <div class="small" style="margin-top:10px">註：IRV 每輪會依剩餘候選人重新判定「第一偏好」。</div>
+    <div class="small" style="margin-top:10px">註：IRV 每輪會依剩餘候選人重新判定「第一名」。</div>
   `;
 }
 
@@ -746,6 +755,17 @@ function renderIRVSankey(irv) {
 
 function renderPairwiseTable(pairwise, activeIds, candidateNameById, container, totalVotes = 0) {
   if (!container) return;
+
+  const compact = new Intl.NumberFormat('zh-Hant', {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  });
+  const formatCount = (n) => {
+    const v = Number(n) || 0;
+    if (Math.abs(v) < 10000) return String(v);
+    return compact.format(v);
+  };
+
   const table = document.createElement('table');
   const thead = document.createElement('thead');
   const trh = document.createElement('tr');
@@ -771,7 +791,8 @@ function renderPairwiseTable(pairwise, activeIds, candidateNameById, container, 
       } else {
         const v = pairwise?.[a]?.[b] ?? 0;
         const pct = totalVotes > 0 ? ((v / totalVotes) * 100).toFixed(1) : '0.0';
-        td.textContent = `${v} (${pct}%)`;
+        td.textContent = `${formatCount(v)} (${pct}%)`;
+        td.title = `${v} (${pct}%)`;
       }
       tr.appendChild(td);
     }
@@ -1010,18 +1031,18 @@ function buildIRVExplain(irv) {
     if (rd.winner) {
       return {
         title: `第 ${rd.round} 輪：剩最後一人 ${candidateNameById[rd.winner]} 當選`,
-        body: `本輪仍在競逐：${activeNames.join('、')}\n本輪有效票合計 ${total}\n\n第一偏好票數：\n${lines}`,
+        body: `本輪仍在競逐：${activeNames.join('、')}\n本輪有效票合計 ${total}\n\n本輪第一名（含轉移後）票數：\n${lines}`,
       };
     }
     const minVotes = Math.min(...rd.active.map((cid) => rd.firstCounts[cid] ?? 0));
     const minNames = rd.active.filter((cid) => (rd.firstCounts[cid] ?? 0) === minVotes).map((cid) => candidateNameById[cid]);
     const eliminatedName = candidateNameById[rd.eliminated];
     const reason = minNames.length > 1
-      ? `淘汰原因：第一偏好最少（同票：${minNames.join('、')}；依固定順序淘汰 ${eliminatedName}）`
-      : `淘汰原因：第一偏好最少（${eliminatedName} ${minVotes} 票）`;
+      ? `淘汰：本輪第一名（含轉移後）最少（同票：${minNames.join('、')}；依固定順序淘汰 ${eliminatedName}）`
+      : `淘汰：本輪第一名（含轉移後）最少（${eliminatedName} ${minVotes} 票）`;
     return {
       title: `第 ${rd.round} 輪：淘汰 ${candidateNameById[rd.eliminated]}`,
-      body: `本輪仍在競逐：${activeNames.join('、')}\n本輪有效票合計 ${total}\n${reason}\n\n第一偏好票數：\n${lines}`,
+      body: `本輪仍在競逐：${activeNames.join('、')}\n本輪有效票合計 ${total}\n${reason}\n\n本輪第一名（含轉移後）票數：\n${lines}`,
     };
   });
 }
@@ -1093,12 +1114,13 @@ function recomputeAndRender() {
   if (system === 'benham') {
     const res = runBenham({ candidates: activeIds, ballots });
     // Provide a fuller step-by-step from rounds
+    const totalAll = ballots.reduce((a, b) => a + (Number(b.count) || 0), 0);
     const steps = (res.rounds ?? []).map((rd) => {
       const names = (rd.active ?? []).map((cid) => candidateNameById[cid]);
       if (rd.condorcetWinner) {
         return {
           title: `第 ${rd.round} 輪：找到孔多賽優勝者，${candidateNameById[rd.condorcetWinner]} 當選`,
-          body: `本輪仍在競逐：${names.join('、')}\n\n孔多賽優勝者：${candidateNameById[rd.condorcetWinner]}`,
+          body: `本輪仍在競逐：${names.join('、')}\n本輪有效票合計 ${totalAll}\n\n孔多賽優勝者：${candidateNameById[rd.condorcetWinner]}`,
         };
       }
       const firstCounts = rd.firstCounts ?? {};
@@ -1108,9 +1130,9 @@ function recomputeAndRender() {
         .filter((cid) => (firstCounts[cid] ?? 0) === minVotes)
         .map((cid) => candidateNameById[cid]);
       const eliminatedName = candidateNameById[rd.eliminated];
-      const reason = minNames.length > 1
-        ? `淘汰原因：第一偏好最少（同票：${minNames.join('、')}；依固定順序淘汰 ${eliminatedName}）`
-        : `淘汰原因：第一偏好最少（${eliminatedName} ${minVotes} 票）`;
+      const elim = minNames.length > 1
+        ? `本輪第一名（含轉移後）最少同票：${minNames.join('、')}；依固定順序淘汰 ${eliminatedName}`
+        : `本輪第一名（含轉移後）最少：${eliminatedName}（${minVotes} 票）`;
       const lines = (rd.active ?? [])
         .map((cid) => {
           const v = firstCounts[cid] ?? 0;
@@ -1120,7 +1142,7 @@ function recomputeAndRender() {
         .join('\n');
       return {
         title: `第 ${rd.round} 輪：淘汰 ${candidateNameById[rd.eliminated]}`,
-        body: `本輪仍在競逐：${names.join('、')}\n本輪有效票合計 ${total}\n本輪未出現孔多賽優勝者，因此改用 IRV 淘汰最低者\n${reason}\n\n第一偏好票數：\n${lines}`,
+        body: `本輪（淘汰前）仍在競逐：${names.join('、')}\n本輪有效票合計 ${total}\n本輪未出現孔多賽優勝者，因此依 IRV 規則淘汰：${elim}\n\n本輪第一名（含轉移後）票數：\n${lines}`,
       };
     });
 
@@ -1240,6 +1262,7 @@ function main() {
   initOptions();
   renderMatrixTable();
   renderFinder();
+  if (els.finderDetails) bindDetailsPopover(els.finderDetails);
   wireEvents();
   recomputeAndRender();
 }

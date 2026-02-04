@@ -7,31 +7,585 @@
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="../style.css" />
   <script type="module">
-    import { renderMarkdownPage } from '../shared/mdpage.js';
-    renderMarkdownPage({
-      container: document.getElementById('md'),
-      src: '../../docs/ballot-design.md',
+    import { renderSiteNav } from '../shared/nav.js';
+    renderSiteNav({ container: document.getElementById('siteNav') });
+  </script>
+  <script type="module">
+    import { bindDetailsPopover } from '../shared/details-popover.js';
+
+    // Make wide tables usable on narrow screens: show a hint when horizontal scroll exists.
+    function updateScrollHints(root = document) {
+      const wraps = root.querySelectorAll('.tableWrap');
+      for (const el of wraps) {
+        if (el.dataset.noScrollHint === '1') continue;
+        const canScrollX = el.scrollWidth > el.clientWidth + 2;
+        el.classList.toggle('scrollX', canScrollX);
+        if (!el.dataset.scrollHintBound) {
+          el.dataset.scrollHintBound = '1';
+          el.addEventListener('scroll', () => {
+            if (Math.abs(el.scrollLeft) > 2) el.dataset.scrolledX = '1';
+          }, { passive: true });
+        }
+      }
+    }
+
+    function optionLabel(n) {
+      // ①..⑳, ㉑..㉔
+      const circled = [
+        '①','②','③','④','⑤','⑥','⑦','⑧','⑨','⑩',
+        '⑪','⑫','⑬','⑭','⑮','⑯','⑰','⑱','⑲','⑳',
+        '㉑','㉒','㉓','㉔',
+      ];
+      return circled[n - 1] ?? String(n);
+    }
+
+    function generatePermutations(items) {
+      if (items.length <= 1) return [items.slice()];
+      const out = [];
+      for (let i = 0; i < items.length; i++) {
+        const head = items[i];
+        const rest = items.slice(0, i).concat(items.slice(i + 1));
+        for (const p of generatePermutations(rest)) out.push([head, ...p]);
+      }
+      return out;
+    }
+
+    function getCandidateNameById() {
+      const els = {
+        A: document.getElementById('nameA'),
+        B: document.getElementById('nameB'),
+        C: document.getElementById('nameC'),
+        D: document.getElementById('nameD'),
+      };
+      const defaults = {
+        A: '王小明',
+        B: '李小華',
+        C: '陳小傑',
+        D: '林小美',
+      };
+      const out = {};
+      for (const k of Object.keys(defaults)) {
+        const raw = String(els[k]?.value ?? '').trim();
+        out[k] = raw || defaults[k];
+      }
+      return out;
+    }
+
+    function updateNameInputs(candidateCount) {
+      const inputs = [
+        document.getElementById('nameA'),
+        document.getElementById('nameB'),
+        document.getElementById('nameC'),
+        document.getElementById('nameD'),
+      ].filter(Boolean);
+      for (let i = 0; i < inputs.length; i++) {
+        const input = inputs[i];
+        const enabled = i < candidateCount;
+        input.disabled = !enabled;
+        input.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+        input.style.opacity = enabled ? '' : '0.55';
+      }
+    }
+
+    /**
+     * @param {{candidates: Array<{id:string, name:string}>, options: Array<{id:number, ranking:string[]}>}} args
+     */
+    function renderFinder({ candidates, options }) {
+      const selectsRoot = document.getElementById('finderSelects');
+      const resultEl = document.getElementById('finderResult');
+      const goBtn = document.getElementById('finderGo');
+      if (!selectsRoot || !resultEl || !goBtn) return;
+
+      const candidateNameById = getCandidateNameById();
+      const n = candidates.length;
+
+      // Build rank selects
+      selectsRoot.innerHTML = '';
+      const selectEls = [];
+
+      for (let i = 0; i < n; i++) {
+        const wrap = document.createElement('div');
+        const label = document.createElement('div');
+        label.className = 'small';
+        label.textContent = `第 ${i + 1} 名`;
+
+        const sel = document.createElement('select');
+        sel.dataset.rankIndex = String(i);
+
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = '請選擇…';
+        sel.appendChild(placeholder);
+
+        for (const c of candidates) {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = candidateNameById[c.id] ?? c.name;
+          sel.appendChild(opt);
+        }
+
+        wrap.appendChild(label);
+        wrap.appendChild(sel);
+        selectsRoot.appendChild(wrap);
+        selectEls.push(sel);
+      }
+
+      // When any select changes, clear result text.
+      for (const sel of selectEls) {
+        sel.addEventListener('change', () => {
+          resultEl.textContent = '';
+        });
+      }
+
+      goBtn.onclick = () => {
+        const ranking = selectEls.map((s) => String(s.value || '').trim()).filter(Boolean);
+        if (ranking.length !== n) {
+          resultEl.textContent = '請先選滿所有名次。';
+          return;
+        }
+        const uniq = new Set(ranking);
+        if (uniq.size !== ranking.length) {
+          resultEl.textContent = '候選人不能重複。';
+          return;
+        }
+        const hit = options.find((o) => o.ranking.join(',') === ranking.join(','));
+        if (!hit) {
+          resultEl.textContent = '查無對應選項。';
+          return;
+        }
+        resultEl.textContent = `對應選項：${optionLabel(hit.id)}（第 ${hit.id} 選項）`;
+      };
+    }
+
+    function rankForCandidateInOption(optionRanking, candidateId) {
+      const idx = optionRanking.indexOf(candidateId);
+      return idx >= 0 ? idx + 1 : 0;
+    }
+
+    function applyExampleSelection(scopeEl, selectedOptId) {
+      scopeEl.querySelectorAll('.colSelected').forEach((el) => el.classList.remove('colSelected'));
+
+      scopeEl.querySelectorAll('.pickBtn').forEach((btn) => {
+        const optId = Number(btn.closest('[data-opt-id]')?.dataset.optId);
+        const isSelected = Number.isFinite(optId) && optId === selectedOptId;
+        btn.textContent = isSelected ? '✔' : '';
+        btn.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+      });
+
+      if (!Number.isFinite(selectedOptId)) return;
+      scopeEl.querySelectorAll(`[data-opt-id="${selectedOptId}"]`).forEach((el) => el.classList.add('colSelected'));
+    }
+
+    function renderSingleRowExample({ root, candidates, options }) {
+      const useMidNames = candidates.length === 4 && options.length === 24;
+      const insertAfter = 12;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'tableWrap';
+      wrap.dataset.exampleScope = 'single';
+      // User requested no scroll hint overlay for the single-row example.
+      wrap.dataset.noScrollHint = '1';
+
+      const table = document.createElement('table');
+      table.className = 'matrixTable exampleTable';
+
+      const thead = document.createElement('thead');
+      const headRow = document.createElement('tr');
+
+      const thLeft = document.createElement('th');
+      thLeft.className = 'matrixLeft matrixHeadLeft';
+      thLeft.textContent = '只能勾選 1 格';
+      headRow.appendChild(thLeft);
+
+      const addOptionHeader = (opt) => {
+        const th = document.createElement('th');
+        th.className = 'matrixHeadOpt';
+        th.textContent = optionLabel(opt.id);
+        th.dataset.optId = String(opt.id);
+        headRow.appendChild(th);
+      };
+
+      for (let i = 0; i < options.length; i++) {
+        if (useMidNames && i === insertAfter) {
+          const thMid = document.createElement('th');
+          thMid.className = 'matrixHeadLeft matrixHeadMid';
+          thMid.textContent = '只能勾選 1 格';
+          headRow.appendChild(thMid);
+        }
+        addOptionHeader(options[i]);
+      }
+
+      const thRight = document.createElement('th');
+      thRight.className = 'matrixRight matrixHeadRight';
+      thRight.textContent = '只能勾選 1 格';
+      headRow.appendChild(thRight);
+
+      thead.appendChild(headRow);
+      table.appendChild(thead);
+
+      const tbody = document.createElement('tbody');
+
+      // Pick row
+      {
+        const tr = document.createElement('tr');
+        const tdL = document.createElement('td');
+        tdL.className = 'matrixLeft';
+        tdL.textContent = '';
+        tr.appendChild(tdL);
+
+        for (let i = 0; i < options.length; i++) {
+          if (useMidNames && i === insertAfter) {
+            const tdMid = document.createElement('td');
+            tdMid.className = 'matrixMid';
+            tdMid.textContent = '';
+            tr.appendChild(tdMid);
+          }
+
+          const opt = options[i];
+          const td = document.createElement('td');
+          td.className = 'pickCell';
+          td.dataset.optId = String(opt.id);
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'pickBtn';
+          btn.textContent = '';
+          btn.setAttribute('aria-pressed', 'false');
+          btn.setAttribute('aria-label', '勾選');
+          td.appendChild(btn);
+          tr.appendChild(td);
+        }
+
+        const tdR = document.createElement('td');
+        tdR.className = 'matrixRight';
+        tdR.textContent = '';
+        tr.appendChild(tdR);
+        tbody.appendChild(tr);
+      }
+
+      // Candidate rows
+      for (const c of candidates) {
+        const tr = document.createElement('tr');
+        const tdL = document.createElement('td');
+        tdL.className = 'matrixLeft';
+        tdL.textContent = c.name;
+        tr.appendChild(tdL);
+
+        for (let i = 0; i < options.length; i++) {
+          if (useMidNames && i === insertAfter) {
+            const tdMid = document.createElement('td');
+            tdMid.className = 'matrixMid matrixMidName';
+            tdMid.textContent = c.name;
+            tr.appendChild(tdMid);
+          }
+          const opt = options[i];
+          const td = document.createElement('td');
+          td.className = `rankCell rank${rankForCandidateInOption(opt.ranking, c.id)}`;
+          td.textContent = String(rankForCandidateInOption(opt.ranking, c.id));
+          td.dataset.optId = String(opt.id);
+          tr.appendChild(td);
+        }
+
+        const tdR = document.createElement('td');
+        tdR.className = 'matrixRight';
+        tdR.textContent = c.name;
+        tr.appendChild(tdR);
+        tbody.appendChild(tr);
+      }
+
+      table.appendChild(tbody);
+      wrap.appendChild(table);
+      return wrap;
+    }
+
+    function renderTwoRowExample({ candidates, options }) {
+      const parts = [options.slice(0, 12), options.slice(12, 24)];
+
+      const wrap = document.createElement('div');
+      wrap.className = 'tableWrap';
+      wrap.dataset.exampleScope = 'double';
+
+      const tables = document.createElement('div');
+      tables.className = 'matrixTables';
+
+      for (const part of parts) {
+        const table = document.createElement('table');
+        table.className = 'matrixTable exampleTable';
+
+        const thead = document.createElement('thead');
+        const headRow = document.createElement('tr');
+
+        const thLeft = document.createElement('th');
+        thLeft.className = 'matrixLeft matrixHeadLeft';
+        thLeft.textContent = '只能勾選 1 格';
+        headRow.appendChild(thLeft);
+
+        for (const opt of part) {
+          const th = document.createElement('th');
+          th.className = 'matrixHeadOpt';
+          th.textContent = optionLabel(opt.id);
+          th.dataset.optId = String(opt.id);
+          headRow.appendChild(th);
+        }
+
+        const thRight = document.createElement('th');
+        thRight.className = 'matrixRight matrixHeadRight';
+        thRight.textContent = '只能勾選 1 格';
+        headRow.appendChild(thRight);
+
+        thead.appendChild(headRow);
+        table.appendChild(thead);
+
+        const tbody = document.createElement('tbody');
+
+        // Pick row
+        {
+          const tr = document.createElement('tr');
+          const tdL = document.createElement('td');
+          tdL.className = 'matrixLeft';
+          tdL.textContent = '';
+          tr.appendChild(tdL);
+          for (const opt of part) {
+            const td = document.createElement('td');
+            td.className = 'pickCell';
+            td.dataset.optId = String(opt.id);
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'pickBtn';
+            btn.textContent = '';
+            btn.setAttribute('aria-pressed', 'false');
+            btn.setAttribute('aria-label', '勾選');
+            td.appendChild(btn);
+            tr.appendChild(td);
+          }
+          const tdR = document.createElement('td');
+          tdR.className = 'matrixRight';
+          tdR.textContent = '';
+          tr.appendChild(tdR);
+          tbody.appendChild(tr);
+        }
+
+        // Candidate rows
+        for (const c of candidates) {
+          const tr = document.createElement('tr');
+          const tdL = document.createElement('td');
+          tdL.className = 'matrixLeft';
+          tdL.textContent = c.name;
+          tr.appendChild(tdL);
+          for (const opt of part) {
+            const td = document.createElement('td');
+            td.className = `rankCell rank${rankForCandidateInOption(opt.ranking, c.id)}`;
+            td.textContent = String(rankForCandidateInOption(opt.ranking, c.id));
+            td.dataset.optId = String(opt.id);
+            tr.appendChild(td);
+          }
+          const tdR = document.createElement('td');
+          tdR.className = 'matrixRight';
+          tdR.textContent = c.name;
+          tr.appendChild(tdR);
+          tbody.appendChild(tr);
+        }
+
+        table.appendChild(tbody);
+        tables.appendChild(table);
+      }
+
+      wrap.appendChild(tables);
+      return wrap;
+    }
+
+    let current = { candidates: [], options: [] };
+
+    function renderExamples(candidateCount) {
+      const root = document.getElementById('examplesRoot');
+      const one = document.getElementById('exampleOne');
+      const twoWrap = document.getElementById('exampleTwoWrap');
+      const two = document.getElementById('exampleTwo');
+      const ex1Title = document.getElementById('ex1Title');
+      const ex2Title = document.getElementById('ex2Title');
+      const note = document.getElementById('exampleNote');
+
+      if (!root || !one || !twoWrap || !two || !ex1Title || !ex2Title || !note) return;
+
+      const nameById = getCandidateNameById();
+      const all = [
+        { id: 'A', name: nameById.A },
+        { id: 'B', name: nameById.B },
+        { id: 'C', name: nameById.C },
+        { id: 'D', name: nameById.D },
+      ];
+      const candidates = all.slice(0, candidateCount);
+      const perms = generatePermutations(candidates.map((c) => c.id));
+      const options = perms.map((ranking, idx) => ({ id: idx + 1, ranking }));
+
+      current = { candidates, options };
+
+      one.innerHTML = '';
+      two.innerHTML = '';
+
+      const selectedByScope = { single: null, double: null };
+
+      ex1Title.textContent = `範例 1：矩陣票（單排顯示）${options.length} 選項（候選人姓名在左右側顯示）`;
+      if (candidateCount === 4) {
+        ex1Title.textContent = `範例 1：矩陣票（單排顯示）24 選項（每 12 選項插入候選人姓名欄）`;
+      }
+
+      const singleWrap = renderSingleRowExample({ root, candidates, options });
+      one.appendChild(singleWrap);
+
+      if (candidateCount === 4) {
+        twoWrap.style.display = '';
+        ex2Title.textContent = '範例 2：矩陣票（雙排顯示）每排 12 選項（左右側有候選人姓名）';
+        const doubleWrap = renderTwoRowExample({ candidates, options });
+        two.appendChild(doubleWrap);
+        note.textContent = '單排/雙排示意互不影響，各自同一時間最多只能勾選一個選項。';
+      } else {
+        twoWrap.style.display = 'none';
+        note.textContent = '同一時間最多只能勾選一個選項。';
+      }
+
+      root.querySelectorAll('.pickBtn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const optId = Number(btn.closest('[data-opt-id]')?.dataset.optId);
+          if (!Number.isFinite(optId)) return;
+
+          const scopeEl = btn.closest('[data-example-scope]');
+          const scopeKey = scopeEl?.dataset.exampleScope;
+          if (!scopeEl || (scopeKey !== 'single' && scopeKey !== 'double')) return;
+
+          selectedByScope[scopeKey] = selectedByScope[scopeKey] === optId ? null : optId;
+          applyExampleSelection(scopeEl, selectedByScope[scopeKey]);
+        });
+      });
+
+      applyExampleSelection(singleWrap, selectedByScope.single);
+      const doubleWrap = root.querySelector('[data-example-scope="double"]');
+      if (doubleWrap) applyExampleSelection(doubleWrap, selectedByScope.double);
+      updateScrollHints(root);
+      setTimeout(() => updateScrollHints(root), 60);
+
+      updateNameInputs(candidateCount);
+      renderFinder({ candidates, options });
+    }
+
+    window.addEventListener('load', () => {
+      const select = document.getElementById('exampleCandidateCount');
+      const initial = Number(select?.value) || 4;
+      renderExamples(initial);
+      select?.addEventListener('change', () => {
+        const n = Number(select.value) || 4;
+        renderExamples(n);
+      });
+
+      for (const id of ['nameA', 'nameB', 'nameC', 'nameD']) {
+        const input = document.getElementById(id);
+        input?.addEventListener('input', () => {
+          const n = Number(select?.value) || 4;
+          renderExamples(n);
+        });
+      }
+
+      updateScrollHints();
+      setTimeout(updateScrollHints, 80);
+
+      const finderDetails = document.getElementById('finderDetails');
+      if (finderDetails) bindDetailsPopover(finderDetails);
     });
+    window.addEventListener('resize', () => updateScrollHints());
+    document.addEventListener('toggle', () => {
+      // details open/close can change layout and scrollWidth
+      updateScrollHints();
+    }, true);
   </script>
 </head>
-<body>
+<body data-page="ballot-design">
   <header class="header">
     <div class="container">
-      <div class="nav">
-        <a href="../">← 回到入口</a>
-        <a href="../purpose/">網站目的</a>
-        <a href="../methods/">選制說明</a>
-        <a href="../round2/">第二輪測試</a>
-        <a href="../updates/">更新內容</a>
-      </div>
+      <nav class="nav" id="siteNav"></nav>
       <h1>我的選票設計</h1>
-      <p class="sub">包含單排設計、第一偏好高亮等。</p>
+      <p class="sub">本頁用「完整排序票」說明：怎麼讀、怎麼填、以及為什麼要這樣排版。</p>
     </div>
   </header>
 
-  <main class="container">
+  <main id="main" class="container">
     <section class="card">
-      <article id="md" class="md"></article>
+      <h2 class="h2">完整排序票（本專案使用）</h2>
+      <p class="hint">每張票對所有候選人給出完整排名（無並列）。這種資料格式可以套用不同計票方法來計算結果，因此特別適合用來做選制比較。</p>
+
+      <h2 class="h2">矩陣票的兩種排版</h2>
+      <ul class="notesList" style="margin-top:6px">
+        <li><b>矩陣票（單排顯示）</b>：把所有選項排成一列，方便人工查找、掃描、對照選項編號（適合直接選舉/紙本）。</li>
+        <li><b>矩陣票（雙排顯示）</b>：同一種矩陣票，為了降低螢幕橫向超出，把選項拆成上下兩排（例如每排 12 選項）。</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2 class="h2">範例（視覺示意）</h2>
+      <details class="summaryDetails" open>
+        <summary>顯示/隱藏：範例（視覺示意）</summary>
+        <p class="hint">窄螢幕請左右滑動查看（可拖曳下方的水平捲軸）。</p>
+        <p class="hint">註：若總候選人數 ≤ 1：按本專案假設視為無需辦理選舉；若總候選人數為 2～4：第一輪不會淘汰任何人，因此可以直接跳過第一輪、從第二輪開始（第二輪候選人數就是 2～4 人）。另外，即使採用 Top4，第二輪候選人數仍可能因退選、資格等原因變成 2/3 人。</p>
+
+        <div class="field nameField" style="margin-top:10px">
+          <label>候選人名字（可改）</label>
+          <div class="nameGrid">
+            <input id="nameA" class="nameInput" value="王小明" />
+            <input id="nameB" class="nameInput" value="李小華" />
+            <input id="nameC" class="nameInput" value="陳小傑" />
+            <input id="nameD" class="nameInput" value="林小美" />
+          </div>
+        </div>
+
+        <div class="field" style="margin-top:10px">
+          <label>選項查詢器（平時隱藏）</label>
+          <details id="finderDetails" class="details">
+            <summary>查詢排序對應選項</summary>
+            <div class="detailsBody">
+              <div id="finderSelects" class="finderGrid"></div>
+              <div class="finderActions">
+                <button id="finderGo" class="btn secondary" type="button">查詢</button>
+                <div id="finderResult" class="small"></div>
+              </div>
+            </div>
+          </details>
+        </div>
+
+        <div class="field" style="max-width:260px; margin-top:10px">
+          <label for="exampleCandidateCount">第二輪候選人數（示意）</label>
+          <select id="exampleCandidateCount">
+            <option value="2">2 位候選人</option>
+            <option value="3">3 位候選人</option>
+            <option value="4" selected>4 位候選人</option>
+          </select>
+        </div>
+
+        <div id="examplesRoot" style="margin-top:10px">
+          <div class="small"><b id="ex1Title"></b></div>
+          <div id="exampleOne" style="margin-top:8px"></div>
+
+          <div id="exampleTwoWrap" style="margin-top:14px">
+            <div class="small"><b id="ex2Title"></b></div>
+            <div id="exampleTwo" style="margin-top:8px"></div>
+          </div>
+
+          <div class="small" style="margin-top:8px" id="exampleNote"></div>
+        </div>
+      </details>
+    </section>
+
+    <section class="card">
+      <h2 class="h2">為什麼用「完整排序」</h2>
+      <ul class="notesList">
+        <li>能支援多種排序選制（IRV、Ranked Pairs、Borda、Benham、Minimax…）。</li>
+        <li>可在同一份資料上切換選制，做可重現的比較。</li>
+      </ul>
+
+      <h2 class="h2" style="margin-top:14px">投票前查詢（縮短現場填票時間）</h2>
+      <p class="hint">即使選票上有完整排序選項，選民也不必在投票所現場慢慢找。一個務實流程是：</p>
+      <ol class="notesList" style="margin-top:8px">
+        <li>投票前先在網站/App 選出自己的排序（例如：<span style="font-family:var(--mono)">1.B 2.C 3.A 4.D</span>）。</li>
+        <li>系統回傳對應的「選項編號」。</li>
+        <li>到現場直接填該編號（或勾選該欄），縮短填票與查找時間。</li>
+      </ol>
     </section>
   </main>
 </body>

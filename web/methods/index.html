@@ -6,43 +6,138 @@
   <title>選制說明｜Top4 專案</title>
   <link rel="icon" href="data:," />
   <link rel="stylesheet" href="../style.css" />
+  <style>
+    /* Doc-view mode: the page already has a title in the header. */
+    body.docView article.md > h1:first-child{ display:none; }
+  </style>
   <script type="module">
-    import { renderMarkdownPage } from '../shared/mdpage.js';
+    import { renderSiteNav } from '../shared/nav.js';
     const params = new URLSearchParams(window.location.search);
     const DEFAULT_DOC = '../../docs/systems/overview.md';
-    const doc = params.get('doc') || DEFAULT_DOC;
-    const back = document.getElementById('backToOverview');
-    if (back) {
-      if (doc === DEFAULT_DOC) back.style.display = 'none';
-      else back.style.display = 'inline-flex';
-    }
-    renderMarkdownPage({
-      container: document.getElementById('md'),
-      src: doc,
+    const doc = params.get('doc');
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      renderSiteNav({ container: document.getElementById('siteNav') });
+
+      const title = document.getElementById('pageTitle');
+      const back = document.getElementById('backToOverview');
+      const htmlView = document.getElementById('htmlView');
+      const mdView = document.getElementById('mdView');
+
+      const isDocView = Boolean(doc);
+      if (title) title.textContent = isDocView ? '選制說明（延伸閱讀）' : '選制說明';
+      if (back) back.style.display = isDocView ? 'inline-flex' : 'none';
+      if (htmlView) htmlView.style.display = isDocView ? 'none' : 'block';
+      if (mdView) mdView.style.display = isDocView ? 'block' : 'none';
+
+      if (!isDocView) return;
+      document.body.classList.add('docView');
+
+      const { renderMarkdownPage } = await import('../shared/mdpage.js');
+      renderMarkdownPage({
+        container: document.getElementById('md'),
+        tocContainer: document.getElementById('toc'),
+        src: doc || DEFAULT_DOC,
+      });
     });
   </script>
 </head>
-<body>
+<body data-page="methods">
   <header class="header">
     <div class="container">
-      <div class="nav">
-        <a href="../">← 回到入口</a>
-        <a href="../purpose/">網站目的</a>
-        <a href="../ballot-design/">我的選票設計</a>
-        <a href="../round2/">第二輪測試</a>
-        <a href="../updates/">更新內容</a>
-      </div>
-      <h1>選制說明</h1>
-      <p class="sub">面向非政治系的大眾：用直覺與步驟理解各種選制。</p>
+      <nav class="nav" id="siteNav"></nav>
+      <h1 id="pageTitle">選制說明</h1>
+      <p class="sub">逐一說明本網站支援的選制：直覺、計票步驟、優缺點與例子。</p>
     </div>
   </header>
 
-  <main class="container">
+  <main id="main" class="container">
     <section class="card">
       <div class="backBar">
         <a id="backToOverview" class="backLink" href="./">← 回到選制說明總覽</a>
       </div>
-      <article id="md" class="md"></article>
+
+      <div id="htmlView">
+        <h2 class="h2" style="margin-top:14px">快速對照（給大眾與專家）</h2>
+        <div class="tableWrap" style="margin-top:8px">
+          <table class="table" style="min-width:820px">
+            <thead>
+              <tr>
+                <th>選制</th>
+                <th>主要用到的票資訊</th>
+                <th>是否符合孔多賽贏家標準</th>
+                <th>一句話直覺</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><a href="./?doc=/docs/systems/plurality.md">簡單多數（只看第一名）</a></td>
+                <td>只看第一名</td>
+                <td>否</td>
+                <td>誰第一名票最多誰贏</td>
+              </tr>
+              <tr>
+                <td><a href="./?doc=/docs/systems/irv.md">IRV（即時決選 / 排序投票）</a></td>
+                <td>完整排序</td>
+                <td>否</td>
+                <td>一輪輪淘汰最低第一名，把票轉移</td>
+              </tr>
+              <tr>
+                <td><a href="./?doc=/docs/systems/borda.md">Borda（波達計分）</a></td>
+                <td>完整排序</td>
+                <td>否</td>
+                <td>依名次給分，加總最高者勝</td>
+              </tr>
+              <tr>
+                <td><a href="./?doc=/docs/systems/ranked-pairs.md">Ranked Pairs（鎖定排序）</a></td>
+                <td>完整排序 → 兩兩對決</td>
+                <td>✅ 是</td>
+                <td>依勝負強度鎖定勝負關係，避免循環</td>
+              </tr>
+              <tr>
+                <td><a href="./?doc=/docs/systems/benham.md">Benham</a></td>
+                <td>完整排序 → 兩兩對決 + 第一名淘汰</td>
+                <td>✅ 是</td>
+                <td>先找兩兩都能贏的人；否則像 IRV 淘汰</td>
+              </tr>
+              <tr>
+                <td><a href="./?doc=/docs/systems/minimax.md">Minimax</a></td>
+                <td>完整排序 → 兩兩對決</td>
+                <td>✅ 是</td>
+                <td>看每個人的「最糟對決」誰最不糟</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p class="small" style="margin-top:8px">
+          ✅「符合孔多賽贏家標準」（也常說「孔多賽一致 / Condorcet-consistent」）：若存在孔多賽優勝者（在兩兩對決中能擊敗所有其他候選人），該選制一定會選出他。
+        </p>
+
+        <p class="small">
+          本頁要特別註明的 3 個孔多賽系列選制：Ranked Pairs、Benham、Minimax（以上三者皆 ✅ 符合孔多賽贏家標準）。
+        </p>
+
+        <h2 class="h2" style="margin-top:14px">這些選制在第二輪的角色</h2>
+        <p class="hint">若你採用「Top4 兩輪」：</p>
+        <ul class="notesList">
+          <li>Top4 的核心是把候選人數壓到可操作的規模：固定在 4 人時，完整排序只有 24 種，選票與人工查核難度會明顯下降。</li>
+          <li>第一輪常用簡單多數（每張票只選 1 位，不排序）做候選人篩選：規則直觀、容易操作。</li>
+          <li>第二輪使用「完整排序票」的選制決定勝者：每張票都把候選人從第一名排到最後一名，更完整反映偏好。</li>
+          <li>按本專案假設：若總候選人數 ≤ 1，視為無需辦理選舉；若總候選人數為 2～4，第一輪不會淘汰任何人，因此可直接跳過第一輪、直接進第二輪。</li>
+          <li>（補充）即使採用 Top4，第二輪仍可能因退選、資格等原因少於 4 人。</li>
+          <li>第一輪的目的，是在人數過多時先縮減候選人數，避免選票過長、難以人工計票而被迫集中或改成電子計票，進而增加對選制的不信任。</li>
+        </ul>
+
+        <p class="hint">一句話理解「Top4 兩輪」：第一輪先把人選縮到 4 人，第二輪再用完整排序票來決定最終勝者。</p>
+      </div>
+
+      <div id="mdView" style="display:none">
+        <div class="mdLayout">
+          <aside id="toc" class="toc"></aside>
+          <article id="md" class="md"></article>
+        </div>
+      </div>
     </section>
   </main>
 </body>

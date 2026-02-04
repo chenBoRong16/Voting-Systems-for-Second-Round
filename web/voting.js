@@ -126,8 +126,8 @@ export function runPlurality({ candidates, ballots }) {
     firstCounts,
     explain: [
       {
-        title: 'Plurality（只看第一志願）',
-        body: `有效票合計 ${total}\n\n第一志願票數：\n${lines}\n\n因只看第一志願，票數最高者當選。\n若同票，依候選人代號固定順序。\n\n勝者：${winner ?? '（無）'}`,
+        title: '簡單多數（只看第一名）',
+        body: `有效票合計 ${total}\n\n第一名票數：\n${lines}\n\n因只看第一名，票數最高者當選。\n若同票，依候選人代號固定順序。\n\n勝者：${winner ?? '（無）'}`,
       },
     ],
   };

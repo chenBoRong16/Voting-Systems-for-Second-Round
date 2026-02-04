@@ -8,40 +8,50 @@
   <link rel="stylesheet" href="../style.css" />
   <script defer src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
+  <script type="module">
+    import { renderSiteNav } from '../shared/nav.js';
+    renderSiteNav({ container: document.getElementById('siteNav') });
+  </script>
+  <script>
+    // Embed mode: /web/round2/?embed=matrix
+    (function () {
+      try {
+        const p = new URLSearchParams(window.location.search);
+        const mode = p.get('embed');
+        if (mode) document.documentElement.dataset.embed = mode;
+      } catch {
+        // ignore
+      }
+    })();
+  </script>
   <script type="module" defer src="./app.js"></script>
 </head>
-<body>
+<body data-page="round2">
   <header class="header">
     <div class="container">
-      <div class="nav">
-        <a href="../">← 回到入口</a>
-        <a href="../purpose/">網站目的</a>
-        <a href="../ballot-design/">我的選票設計</a>
-        <a href="../methods/">選制說明</a>
-        <a href="../updates/">更新內容</a>
-      </div>
+      <nav class="nav" id="siteNav"></nav>
       <h1>第二輪選制測試（不含第一輪初選）</h1>
       <p class="sub">調整各排序選項得票，對比不同選制在「第二輪」的結算過程與結果。</p>
     </div>
   </header>
 
-  <main class="container">
+  <main id="main" class="container">
     <section class="card overflowVisible">
       <div class="controls">
         <div class="field">
           <label for="system">第二輪選制</label>
           <select id="system">
-            <option value="plurality">Plurality（只看第一志願）</option>
+            <option value="plurality">簡單多數（只看第一名）</option>
             <option value="irv" selected>IRV（即時決選 / 排序投票）</option>
-            <option value="minimax">Minimax（最大反對票數最小化）</option>
-            <option value="rankedPairs">Ranked Pairs（鎖定排序）</option>
-            <option value="benham">Benham（若有孔多賽優勝者則直接當選）</option>
+            <option value="minimax">Minimax（孔多賽一致；最大反對票數最小化）</option>
+            <option value="rankedPairs">Ranked Pairs（孔多賽一致；鎖定排序）</option>
+            <option value="benham">Benham（孔多賽一致；有孔多賽優勝者則直接當選）</option>
             <option value="borda">Borda（波達計分）</option>
           </select>
         </div>
 
         <div class="field">
-          <label for="candidateCount">候選人數（≤4）</label>
+          <label for="candidateCount">候選人數（2～4）</label>
           <select id="candidateCount">
             <option value="2">2 人（2 選項）</option>
             <option value="3">3 人（6 選項）</option>
@@ -117,7 +127,7 @@
         </div>
 
         <div class="field right">
-          <button id="purpose" class="btn secondary">這個站在測什麼？</button>
+          <button id="purpose" class="btn secondary">這頁在測什麼？</button>
           <button id="reset" class="btn">全部歸零</button>
           <button id="randomize" class="btn secondary">隨機產生</button>
         </div>
@@ -134,7 +144,7 @@
             </div>
 
             <div class="small" style="margin-top:8px">
-              為了避免在螢幕上橫向超出，本站在 4 人/24 選項時分成兩排顯示（每排 12 選項）。
+              為了避免在螢幕上橫向超出，本頁在 4 人/24 選項時分成兩排顯示（每排 12 選項）。
               但在「直接選舉」情境下，我仍採用 <b>單排顯示</b> 以方便人工計票與查找。
             </div>
           </details>
@@ -152,7 +162,7 @@
             <summary>顯示/隱藏：IRV 多輪 Sankey</summary>
             <div id="irvViz" class="viz">
               <div class="vizHeader">
-                <div class="hint">每一輪顯示當輪計入的票流；被淘汰者的票會依下一偏好轉移。把鼠標移到色塊上可看累積票數與百分比。</div>
+                <div class="hint">每一輪顯示當輪計入的票流；被淘汰者的票會依下一名轉移。把鼠標移到色塊上可看累積票數與百分比。</div>
               </div>
               <div id="sankeyContainer" class="sankey"></div>
             </div>
@@ -230,19 +240,19 @@
   <dialog id="purposeDialog" class="dialog">
     <div class="dialogBody">
       <div class="dialogHeader">
-        <h2 class="h2" style="margin:0">這個站在測什麼？</h2>
+        <h2 class="h2" style="margin:0">這頁在測什麼？</h2>
         <button id="purposeClose" class="btn">關閉</button>
       </div>
       <div class="dialogContent">
         <p style="margin-top:0">
-          這個子站是用來 <b>單獨測試第二輪選制</b> 的：你在這裡直接輸入「第二輪候選人集合」的完整排序票分布，並對比不同選制的結算過程與結果。
-          <b>本頁不包含第一輪初選</b>（例如：用簡單多數選出 Top4 的那一輪）。
+          這一頁用來 <b>單獨測試第二輪選制</b>：你在上方「矩陣票（完整排序）」輸入每種排序各有幾票，本頁會用不同選制計算，並顯示結算過程與結果。
         </p>
         <ul style="margin:0; padding-left: 18px">
-          <li>本頁支援 2～4 人；2 人只有 2 個排序選項，3 人只有 6 個排序選項。</li>
-          <li>候選人數 ≤ 4 時，可直接在本頁調整完整排序票（矩陣票）。</li>
-          <li>若總候選人數 ≤ 4，第一輪等於保留全部候選人，可直接跳過；第一輪只在候選人過多時用來縮減人數，避免選票過長、難以人工計票而被迫集中或改成電子計票，進而增加對選制的不信任。</li>
-          <li>兩輪 Top4 概念：第一輪用簡單多數（只看第一志願）選出 Top4；第二輪用完整排序票的選制決定勝者。</li>
+          <li>按本專案假設：若總候選人數 ≤ 1，視為無需辦理選舉；因此本頁只處理 2～4 人。</li>
+          <li>本頁支援 2～4 人：2 人有 2 種完整排序、3 人有 6 種、4 人有 24 種。</li>
+          <li><b>本頁不包含第一輪</b>：第一輪的功能只有「把候選人縮減到 4 人」。若總候選人數為 2～4，第一輪沒有篩選效果，所以<b>直接跳過第一輪</b>。</li>
+          <li>第一輪只在候選人過多時才需要：候選人太多會讓選票過長、人工計票與查找變困難，最後可能被迫集中或改成電子計票，進而增加對選制的不信任。</li>
+          <li>兩輪 Top4 概念：第一輪用簡單多數（每張票只選 1 位，不排序）選出 4 人；第二輪用完整排序票的選制決定勝者。</li>
         </ul>
       </div>
     </div>

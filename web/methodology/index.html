@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Top4 方法論｜Top4 專案</title>
+	<link rel="icon" href="data:," />
+	<link rel="stylesheet" href="../style.css" />
+	<style>
+		/* The page already has a title in the header. */
+		article.md > h1:first-child{ display:none; }
+	</style>
+	<script type="module">
+		import { renderSiteNav } from '../shared/nav.js';
+		const params = new URLSearchParams(window.location.search);
+		const DEFAULT_DOC = '../../docs/methodology-top4-two-round.md';
+
+		document.addEventListener('DOMContentLoaded', async () => {
+			renderSiteNav({ container: document.getElementById('siteNav') });
+
+			const { renderMarkdownPage } = await import('../shared/mdpage.js');
+			renderMarkdownPage({
+				container: document.getElementById('md'),
+				tocContainer: document.getElementById('toc'),
+				src: params.get('doc') || DEFAULT_DOC,
+			});
+		});
+	</script>
+</head>
+<body data-page="methodology">
+	<header class="header">
+		<div class="container">
+			<nav class="nav" id="siteNav"></nav>
+			<h1>Top4 方法論（延伸）</h1>
+			<p class="sub">把「第一輪候選人篩選」與「第二輪決勝規則」拆開，讓討論、實作與推廣都更清楚。</p>
+		</div>
+	</header>
+
+	<main id="main" class="container">
+		<section class="card">
+			<div class="mdLayout">
+				<aside id="toc" class="toc"></aside>
+				<article id="md" class="md"></article>
+			</div>
+		</section>
+	</main>
+</body>
+</html>
