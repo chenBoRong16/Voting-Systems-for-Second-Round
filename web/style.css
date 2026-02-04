@@ -635,6 +635,24 @@ select{
 }
 .md a{ color: var(--accent); }
 
+.updatesList{
+  display:grid;
+  gap: 14px;
+}
+
+.updateCard{
+  border: 1px solid rgba(17,24,39,0.10);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.85);
+  padding: 12px;
+}
+
+.divider{
+  height: 1px;
+  background: rgba(17,24,39,0.10);
+  margin: 16px 0;
+}
+
 .backBar{
   display:flex;
   justify-content:flex-start;

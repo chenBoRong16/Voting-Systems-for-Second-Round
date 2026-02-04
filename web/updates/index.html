@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>更新內容｜Top4 專案</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="../style.css" />
+  <script type="module">
+    import { marked } from 'https://cdn.jsdelivr.net/npm/marked@12/+esm';
+
+    const container = document.getElementById('updates');
+    const repoRoot = new URL('../../', import.meta.url);
+    const manifestUrl = new URL('updates/manifest.json', repoRoot);
+
+    function escapeHtml(s) {
+      return String(s)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    async function fetchText(url) {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return await res.text();
+    }
+
+    async function renderLatestNotes() {
+      try {
+        const manifestText = await fetchText(manifestUrl);
+        const manifest = JSON.parse(manifestText);
+        const notes = Array.isArray(manifest.notes) ? manifest.notes : [];
+        if (notes.length === 0) {
+          container.innerHTML = '<div class="small">目前沒有可顯示的更新日誌。</div>';
+          return;
+        }
+
+        const latest = notes.slice(0, 2);
+        const blocks = [];
+        for (const path of latest) {
+          const url = new URL(path, repoRoot);
+          const md = await fetchText(url);
+          const html = marked.parse(md, { mangle: false, headerIds: true });
+          blocks.push(`<article class="md">${html}</article>`);
+        }
+        container.innerHTML = blocks.join('<div class="divider"></div>');
+      } catch (err) {
+        container.innerHTML = `<div class="small">讀取更新日誌失敗：${escapeHtml(String(err))}</div>`;
+      }
+    }
+
+    renderLatestNotes();
+  </script>
+</head>
+<body>
+  <header class="header">
+    <div class="container">
+      <div class="nav">
+        <a href="../">← 回到入口</a>
+        <a href="../purpose/">網站目的</a>
+        <a href="../ballot-design/">我的選票設計</a>
+        <a href="../methods/">選制說明</a>
+        <a href="../round2/">第二輪測試</a>
+      </div>
+      <h1>更新內容</h1>
+      <p class="sub">顯示最近兩筆更新日誌（以天為單位）。</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <div id="updates"></div>
+    </section>
+  </main>
+</body>
+</html>
