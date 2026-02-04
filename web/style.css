@@ -363,8 +363,9 @@ select{
 .pickBtn:hover{ border-color: rgba(17,24,39,0.45); }
 
 .voteCellInput{
-  width: 64px;
-  max-width: 100%;
+  width: var(--vote-cell-width, 64px);
+  min-width: var(--vote-cell-width, 64px);
+  max-width: none;
   padding: 6px 8px;
   border-radius: 10px;
   border: 1px solid rgba(17,24,39,0.14);
@@ -372,6 +373,15 @@ select{
   color: var(--text);
   font-family: var(--mono);
   text-align: right;
+}
+/* Hide number spinners to avoid covering digits */
+.voteCellInput::-webkit-outer-spin-button,
+.voteCellInput::-webkit-inner-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+.voteCellInput[type="number"]{
+  -moz-appearance: textfield;
 }
 
 .rankCell{ font-family: var(--mono); }

@@ -25,6 +25,7 @@ let options = [];
 let focusedOptionId = 1;
 let selectedOptionId = null;
 let finderSelections = [];
+const NO_UPPER_LIMIT = Number.MAX_SAFE_INTEGER;
 
 const els = {
   system: document.getElementById('system'),
@@ -72,8 +73,8 @@ function clamp(n, lo, hi) {
 }
 
 function getRandomSettings() {
-  const total = clamp(Number(els.randTotal?.value ?? 120), 0, 100000);
-  const max = clamp(Number(els.randMax?.value ?? 30), 0, 100000);
+  const total = clamp(Number(els.randTotal?.value ?? 120), 0, NO_UPPER_LIMIT);
+  const max = clamp(Number(els.randMax?.value ?? 30), 0, NO_UPPER_LIMIT);
   const zero = clamp(Number(els.randZero?.value ?? 0.55), 0, 1);
   const bias = clamp(Number(els.randBias?.value ?? 1.2), 0.2, 5);
   return { total, max, zero, bias };
@@ -84,8 +85,8 @@ function loadRandomSettings() {
     const raw = localStorage.getItem('top4.randomSettings');
     if (!raw) return;
     const s = JSON.parse(raw);
-    if (els.randTotal) els.randTotal.value = String(clamp(Number(s.total ?? 120), 0, 100000));
-    if (els.randMax) els.randMax.value = String(clamp(Number(s.max ?? 30), 0, 100000));
+    if (els.randTotal) els.randTotal.value = String(clamp(Number(s.total ?? 120), 0, NO_UPPER_LIMIT));
+    if (els.randMax) els.randMax.value = String(clamp(Number(s.max ?? 30), 0, NO_UPPER_LIMIT));
     if (els.randZero) els.randZero.value = String(clamp(Number(s.zero ?? 0.55), 0, 1));
     if (els.randBias) els.randBias.value = String(clamp(Number(s.bias ?? 1.2), 0.2, 5));
   } catch {
@@ -227,6 +228,10 @@ function renderMatrixTable() {
   const activeIds = getActiveCandidateIds();
   const candidateNameById = getCandidateNameById();
   const nOpts = options.length;
+  const maxCount = options.reduce((max, o) => Math.max(max, Number(o.count) || 0), 0);
+  const digitCount = String(Math.max(0, maxCount)).length;
+  const paddedDigits = Math.max(4, digitCount);
+  els.matrixTables.style.setProperty('--vote-cell-width', `calc(${paddedDigits}ch + 28px)`);
   const showMiddleNames = false;
   const useTwoRows = activeIds.length === 4 && nOpts === 24;
   const inlineSides = useTwoRows || activeIds.length < 4;
