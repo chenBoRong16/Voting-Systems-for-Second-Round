@@ -227,6 +227,7 @@ function renderMatrixTable() {
   const nOpts = options.length;
   const showMiddleNames = false;
   const useTwoRows = activeIds.length === 4 && nOpts === 24;
+  const inlineSides = useTwoRows || activeIds.length < 4;
   const parts = useTwoRows ? [options.slice(0, 12), options.slice(12, 24)] : [options];
 
   els.matrixTables.innerHTML = '';
@@ -234,6 +235,7 @@ function renderMatrixTable() {
   for (const part of parts) {
     const table = document.createElement('table');
     table.className = 'matrixTable';
+    if (inlineSides) table.classList.add('inlineSides');
 
     const thead = document.createElement('thead');
     const headRow = document.createElement('tr');
@@ -969,7 +971,6 @@ function renderRankedPairsViz(rp) {
   // Ranking list
   const orderNames = (rp.order ?? []).map((cid) => candidateNameById[cid]);
   els.rpOrder.innerHTML = `
-    <div class="small" style="margin-bottom:6px">Ranked Pairs 排名</div>
     <ol style="margin:0; padding-left: 18px">
       ${orderNames.map((n) => `<li>${escapeHtml(n)}</li>`).join('')}
     </ol>
@@ -1005,9 +1006,15 @@ function buildIRVExplain(irv) {
         body: `本輪仍在競逐：${activeNames.join('、')}\n本輪有效票合計 ${total}\n\n第一偏好票數：\n${lines}`,
       };
     }
+    const minVotes = Math.min(...rd.active.map((cid) => rd.firstCounts[cid] ?? 0));
+    const minNames = rd.active.filter((cid) => (rd.firstCounts[cid] ?? 0) === minVotes).map((cid) => candidateNameById[cid]);
+    const eliminatedName = candidateNameById[rd.eliminated];
+    const reason = minNames.length > 1
+      ? `淘汰原因：第一偏好最少（同票：${minNames.join('、')}；依固定順序淘汰 ${eliminatedName}）`
+      : `淘汰原因：第一偏好最少（${eliminatedName} ${minVotes} 票）`;
     return {
       title: `第 ${rd.round} 輪：淘汰 ${candidateNameById[rd.eliminated]}`,
-      body: `本輪仍在競逐：${activeNames.join('、')}\n本輪有效票合計 ${total}\n\n第一偏好票數：\n${lines}`,
+      body: `本輪仍在競逐：${activeNames.join('、')}\n本輪有效票合計 ${total}\n${reason}\n\n第一偏好票數：\n${lines}`,
     };
   });
 }
@@ -1089,6 +1096,14 @@ function recomputeAndRender() {
       }
       const firstCounts = rd.firstCounts ?? {};
       const total = Object.values(firstCounts).reduce((a, v) => a + v, 0);
+      const minVotes = Math.min(...(rd.active ?? []).map((cid) => firstCounts[cid] ?? 0));
+      const minNames = (rd.active ?? [])
+        .filter((cid) => (firstCounts[cid] ?? 0) === minVotes)
+        .map((cid) => candidateNameById[cid]);
+      const eliminatedName = candidateNameById[rd.eliminated];
+      const reason = minNames.length > 1
+        ? `淘汰原因：第一偏好最少（同票：${minNames.join('、')}；依固定順序淘汰 ${eliminatedName}）`
+        : `淘汰原因：第一偏好最少（${eliminatedName} ${minVotes} 票）`;
       const lines = (rd.active ?? [])
         .map((cid) => {
           const v = firstCounts[cid] ?? 0;
@@ -1098,7 +1113,7 @@ function recomputeAndRender() {
         .join('\n');
       return {
         title: `第 ${rd.round} 輪：淘汰 ${candidateNameById[rd.eliminated]}`,
-        body: `本輪仍在競逐：${names.join('、')}\n本輪有效票合計 ${total}\n\n第一偏好票數：\n${lines}`,
+        body: `本輪仍在競逐：${names.join('、')}\n本輪有效票合計 ${total}\n本輪未出現孔多賽優勝者，因此改用 IRV 淘汰最低者\n${reason}\n\n第一偏好票數：\n${lines}`,
       };
     });
 

@@ -127,7 +127,7 @@ export function runPlurality({ candidates, ballots }) {
     explain: [
       {
         title: 'Plurality（只看第一志願）',
-        body: `有效票合計 ${total}\n\n第一志願票數：\n${lines}\n\n勝者：${winner ?? '（無）'}`,
+        body: `有效票合計 ${total}\n\n第一志願票數：\n${lines}\n\n因只看第一志願，票數最高者當選。\n若同票，依候選人代號固定順序。\n\n勝者：${winner ?? '（無）'}`,
       },
     ],
   };
@@ -177,7 +177,7 @@ export function runBorda({ candidates, ballots }) {
     explain: [
       {
         title: 'Borda（波達計分）',
-        body: `計分規則：有 N 位候選人時，第 1 名得 N-1 分，第 N 名得 0 分。\n以下詳列每位候選人的名次分布與加總：\n\n${lines}\n\n勝者：${winner ?? '（無）'}`,
+        body: `計分規則：有 N 位候選人時，第 1 名得 N-1 分，第 N 名得 0 分。\n以下詳列每位候選人的名次分布與加總：\n\n${lines}\n\n若同分，依候選人代號固定順序。\n\n勝者：${winner ?? '（無）'}`,
       },
     ],
   };
@@ -280,7 +280,7 @@ export function runMinimax({ candidates, ballots }) {
     explain: [
       {
         title: 'Minimax（最大反對票數最小化）',
-        body: `本網站採用 pairwise opposition 版本：\n對每位候選人 X，計算「有多少票把 Y 排在 X 之前」（對每位對手 Y），取其中最大值作為 X 的最大反對票數。\n選擇最大反對票數最小者。\n\n${lines}\n\n勝者：${winner ?? '（無）'}`,
+        body: `本網站採用 pairwise opposition 版本：\n對每位候選人 X，計算「有多少票把 Y 排在 X 之前」（對每位對手 Y），取其中最大值作為 X 的最大反對票數。\n選擇最大反對票數最小者。\n若最大反對票數同分，依候選人代號固定順序。\n\n${lines}\n\n勝者：${winner ?? '（無）'}`,
       },
     ],
   };
@@ -492,7 +492,7 @@ export function runRankedPairs({ candidates, ballots }) {
     },
     {
       title: '依序鎖定勝負對（Ranked Pairs）',
-      body: pairLines,
+      body: `說明：LOCK = 加入不成環；SKIP = 會形成環。\n${pairLines}`,
     },
     {
       title: '最終排序（由鎖定圖推得）',

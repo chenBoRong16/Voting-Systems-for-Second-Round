@@ -308,6 +308,16 @@ select{
 .matrixTable thead .matrixRight{
   z-index: 3;
 }
+.matrixTable.inlineSides .matrixLeft,
+.matrixTable.inlineSides .matrixRight{
+  position: static;
+  background: transparent;
+  z-index: auto;
+}
+.matrixTable.inlineSides thead .matrixLeft,
+.matrixTable.inlineSides thead .matrixRight{
+  z-index: auto;
+}
 
 .matrixTable.exampleTable .matrixLeft,
 .matrixTable.exampleTable .matrixRight{
