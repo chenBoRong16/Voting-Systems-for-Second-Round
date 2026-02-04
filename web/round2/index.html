@@ -125,13 +125,13 @@
       <div class="stack">
         <div>
           <h2 class="h2">矩陣票（完整排序）</h2>
-          <p class="hint">上方可「勾選」一個選項以聚焦查看；票數請在「票數」列輸入整數。4 人/24 選項時會分成兩排（每排 12 選項）避免超出螢幕。</p>
-          <div class="tableWrap">
-            <div id="matrixTables" class="matrixTables" aria-label="矩陣票"></div>
-          </div>
+          <details class="summaryDetails" open>
+            <summary>顯示/隱藏：矩陣票（完整排序）</summary>
+            <p class="hint">上方可「勾選」一個選項以聚焦查看；票數請在「票數」列輸入整數。4 人/24 選項時會分成兩排（每排 12 選項）避免超出螢幕。</p>
+            <div class="tableWrap">
+              <div id="matrixTables" class="matrixTables" aria-label="矩陣票"></div>
+            </div>
 
-          <details class="oneRowNote">
-            <summary>為何網站分兩排顯示？（點我）</summary>
             <div class="small" style="margin-top:8px">
               為了避免在螢幕上橫向超出，本站在 4 人/24 選項時分成兩排顯示（每排 12 選項）。
               但在「直接選舉」情境下，我仍採用 <b>單排顯示</b> 以方便人工計票與查找。
@@ -142,7 +142,7 @@
         <div>
           <h2 class="h2">即時摘要</h2>
           <details class="summaryDetails" open>
-            <summary>顯示/隱藏 即時摘要</summary>
+            <summary>顯示/隱藏：即時摘要</summary>
             <div id="summary" class="summary"></div>
           </details>
 

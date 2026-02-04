@@ -23,6 +23,7 @@ body{
   margin:0;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
   color: var(--text);
+  line-height: 1.55;
   background: radial-gradient(1200px 800px at 20% 0%, #e8f0ff 0%, transparent 60%),
               radial-gradient(1000px 700px at 80% 10%, #e8fff1 0%, transparent 55%),
               var(--bg);
@@ -35,18 +36,20 @@ body{
 }
 
 .header{
-  padding: 34px 0 18px;
+  padding: 32px 0 18px;
 }
 
 h1{
   margin:0 0 6px;
-  font-size: 24px;
+  font-size: 26px;
   letter-spacing: 0.2px;
 }
 
 .sub{
   margin:0;
   color: var(--muted);
+  line-height: 1.6;
+  max-width: 900px;
 }
 
 .card{
@@ -54,10 +57,12 @@ h1{
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 16px;
+  padding: 18px;
   overflow: hidden;
 }
 .card.overflowVisible{ overflow: visible; }
+
+main.container{ padding-bottom: 40px; }
 
 .controls{
   display:flex;
@@ -204,7 +209,7 @@ select{
 }
 
 .h2{ margin: 8px 0 6px; font-size: 16px; }
-.hint{ color: var(--muted); margin: 0 0 10px; font-size: 13px; }
+.hint{ color: var(--muted); margin: 0 0 10px; font-size: 13px; line-height: 1.55; }
 
 .tableWrap{
   overflow:auto;
@@ -468,6 +473,7 @@ select{
   color: var(--muted);
   font-size: 13px;
   margin-bottom: 8px;
+  font-weight: 600;
 }
 
 .summaryRow{
