@@ -11,6 +11,7 @@
     import { renderMarkdownPage } from '../shared/mdpage.js';
 
     const container = document.getElementById('updates');
+    // Repo root: /<repo>/ when deployed on GitHub Pages.
     const repoRoot = new URL('../../', import.meta.url);
     const manifestUrl = new URL('updates/manifest.json', repoRoot);
 
@@ -48,8 +49,9 @@
           article.className = 'md';
           card.appendChild(article);
           container.appendChild(card);
-          const abs = `/${String(path).replace(/^\//, '')}`;
-          await renderMarkdownPage({ container: article, src: abs });
+          const rel = String(path).replace(/^\//, '');
+          const noteUrl = new URL(rel, repoRoot);
+          await renderMarkdownPage({ container: article, src: noteUrl.toString() });
         }
       } catch (err) {
         container.innerHTML = `<div class="small">讀取更新日誌失敗：${escapeHtml(String(err))}</div>`;

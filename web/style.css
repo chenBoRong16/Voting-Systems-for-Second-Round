@@ -154,7 +154,7 @@ main.container{ padding-bottom: 40px; }
   min-width: 240px;
 }
 
-label{ color: var(--muted); font-size: 13px; }
+label{ color: var(--text); font-size: 13px; }
 select{
   padding: 10px 10px;
   border-radius: 10px;
@@ -232,6 +232,14 @@ select{
     width: min(720px, 90vw);
     margin-top: 0;
   }
+
+  /* Random settings popover: same behavior as finder (no layout jump). */
+  #randomSettings .detailsBody{
+    position: absolute;
+    max-width: 90vw;
+    width: min(720px, 90vw);
+    margin-top: 0;
+  }
 }
 
 .btn{
@@ -282,7 +290,7 @@ select{
 }
 
 .h2{ margin: 8px 0 6px; font-size: 16px; }
-.hint{ color: var(--muted); margin: 0 0 10px; font-size: 13px; line-height: 1.55; }
+.hint{ color: inherit; margin: 0 0 10px; font-size: 13px; line-height: 1.55; }
 
 .tableWrap{
   overflow:auto;
@@ -691,7 +699,7 @@ body[data-page="ballot-design"] .matrixTable.exampleTable .matrixMid{
 .footerInner{ display:flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .muted{ color: var(--muted); }
 
-.small{ font-size: 12px; color: var(--muted); }
+.small{ font-size: 12px; color: inherit; }
 
 .lead{ font-size: 14px; color: var(--text); line-height: 1.7; }
 

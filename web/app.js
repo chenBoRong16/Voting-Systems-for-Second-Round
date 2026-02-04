@@ -41,6 +41,7 @@ const els = {
   randMax: document.getElementById('randMax'),
   randZero: document.getElementById('randZero'),
   randBias: document.getElementById('randBias'),
+  randStatus: document.getElementById('randStatus'),
   purpose: document.getElementById('purpose'),
   purposeDialog: document.getElementById('purposeDialog'),
   purposeClose: document.getElementById('purposeClose'),
@@ -64,6 +65,7 @@ const els = {
   condorcetGraph: document.getElementById('condorcetGraph'),
   condorcetOrderStandalone: document.getElementById('condorcetOrderStandalone'),
   finderDetails: document.getElementById('finderDetails'),
+  randomSettings: document.getElementById('randomSettings'),
   finderSelects: document.getElementById('finderSelects'),
   finderGo: document.getElementById('finderGo'),
   finderResult: document.getElementById('finderResult'),
@@ -75,8 +77,8 @@ function clamp(n, lo, hi) {
 }
 
 function getRandomSettings() {
-  const total = clamp(Number(els.randTotal?.value ?? 120), 0, NO_UPPER_LIMIT);
-  const max = clamp(Number(els.randMax?.value ?? 30), 0, NO_UPPER_LIMIT);
+  const total = clampNonNegativeInt(clamp(Number(els.randTotal?.value ?? 120), 0, NO_UPPER_LIMIT));
+  const max = clampNonNegativeInt(clamp(Number(els.randMax?.value ?? 30), 0, NO_UPPER_LIMIT));
   const zero = clamp(Number(els.randZero?.value ?? 0.55), 0, 1);
   const bias = clamp(Number(els.randBias?.value ?? 1.2), 0.2, 5);
   return { total, max, zero, bias };
@@ -87,8 +89,8 @@ function loadRandomSettings() {
     const raw = localStorage.getItem('top4.randomSettings');
     if (!raw) return;
     const s = JSON.parse(raw);
-    if (els.randTotal) els.randTotal.value = String(clamp(Number(s.total ?? 120), 0, NO_UPPER_LIMIT));
-    if (els.randMax) els.randMax.value = String(clamp(Number(s.max ?? 30), 0, NO_UPPER_LIMIT));
+    if (els.randTotal) els.randTotal.value = String(clampNonNegativeInt(clamp(Number(s.total ?? 120), 0, NO_UPPER_LIMIT)));
+    if (els.randMax) els.randMax.value = String(clampNonNegativeInt(clamp(Number(s.max ?? 30), 0, NO_UPPER_LIMIT)));
     if (els.randZero) els.randZero.value = String(clamp(Number(s.zero ?? 0.55), 0, 1));
     if (els.randBias) els.randBias.value = String(clamp(Number(s.bias ?? 1.2), 0.2, 5));
   } catch {
@@ -111,53 +113,170 @@ function randomizeCounts() {
   for (const o of options) o.count = 0;
   if (n === 0 || total <= 0) return;
 
-  const weights = new Array(n).fill(0);
-  for (let i = 0; i < n; i++) {
-    if (Math.random() < zero) {
-      weights[i] = 0;
-      continue;
+  function setRandStatus(msg) {
+    if (!els.randStatus) return;
+    if (!msg) {
+      els.randStatus.textContent = '';
+      els.randStatus.style.display = 'none';
+      return;
     }
-    const u = Math.random();
-    // bias>1 => more concentrated (heavier tail)
-    weights[i] = Math.pow(u, 1 / bias);
+    els.randStatus.textContent = msg;
+    els.randStatus.style.display = 'block';
   }
 
-  let sumW = weights.reduce((a, b) => a + b, 0);
-  if (sumW <= 0) {
-    weights[Math.floor(Math.random() * n)] = 1;
-    sumW = 1;
+  // Decide which options are allowed to be non-zero.
+  const active = [];
+  const inactive = [];
+  for (let i = 0; i < n; i++) {
+    if (Math.random() < zero) inactive.push(i);
+    else active.push(i);
   }
-
-  let counts = weights.map((w) => Math.floor((w / sumW) * total));
-  let cur = counts.reduce((a, b) => a + b, 0);
-  let remain = total - cur;
-  while (remain > 0) {
+  if (active.length === 0) {
     const i = Math.floor(Math.random() * n);
-    counts[i] += 1;
-    remain -= 1;
+    active.push(i);
+    for (let j = 0; j < n; j++) if (j !== i) inactive.push(j);
   }
 
-  if (max > 0) {
-    let overflow = 0;
-    for (let i = 0; i < n; i++) {
-      if (counts[i] > max) {
-        overflow += counts[i] - max;
-        counts[i] = max;
+  const hasCap = max > 0;
+  if (!hasCap && max === 0) {
+    // If max is explicitly 0, there is no capacity to allocate.
+    setRandStatus(total > 0 ? '每選項最大票數為 0，無法產生非零票數。' : '');
+    return;
+  }
+
+  // If there's a cap, ensure we have enough active options to reach the target.
+  // (Zero-vote ratio is treated as a preference; hitting the total is treated as a constraint.)
+  let activeNeeded = 1;
+  if (hasCap) activeNeeded = Math.min(n, Math.max(1, Math.ceil(total / max)));
+  while (hasCap && active.length < activeNeeded && inactive.length > 0) {
+    const pick = Math.floor(Math.random() * inactive.length);
+    active.push(inactive.splice(pick, 1)[0]);
+  }
+
+  let targetTotal = total;
+  if (hasCap) {
+    const effectiveCap = active.length * max;
+    const fullCap = n * max;
+    if (total > fullCap) {
+      targetTotal = fullCap;
+      setRandStatus(`目標總票數 ${total} 超過上限（選項數×最大票數 = ${fullCap}），實際已填到 ${fullCap}。`);
+    } else if (total > effectiveCap) {
+      // This should be rare because we increased active when needed, but keep it safe.
+      targetTotal = effectiveCap;
+      setRandStatus(`目標總票數 ${total} 超過上限（啟用選項×最大票數 = ${effectiveCap}），實際已填到 ${effectiveCap}。`);
+    } else if (activeNeeded > 1 && active.length === activeNeeded && inactive.length > 0) {
+      setRandStatus(`為了達到目標總票數，零票比例已自動降低（啟用 ${active.length}/${n} 個選項；上限 ${effectiveCap}）。`);
+    } else {
+      setRandStatus('');
+    }
+  } else {
+    setRandStatus('');
+  }
+
+  // Generate weights for active options.
+  const weights = new Array(n).fill(0);
+  for (const i of active) {
+    const u = Math.random();
+    // Higher bias => more concentrated (more weight on fewer options)
+    weights[i] = Math.pow(u, bias);
+  }
+
+  function sumWeights(indices) {
+    let s = 0;
+    for (const i of indices) s += weights[i];
+    return s;
+  }
+
+  function allWeightsNonPositive(indices) {
+    for (const i of indices) {
+      if (weights[i] > 0) return false;
+    }
+    return true;
+  }
+
+  // Compute capped proportional target (as floats), then round to integers with largest remainder.
+  const target = new Array(n).fill(0);
+  if (hasCap) {
+    let remainingTotal = targetTotal;
+    let eligible = active.slice();
+    while (eligible.length > 0) {
+      const sumW = sumWeights(eligible);
+      const useUniform = sumW <= 0 || allWeightsNonPositive(eligible);
+      const denom = useUniform ? eligible.length : sumW;
+
+      const shares = new Map();
+      const cappedNow = [];
+      for (const i of eligible) {
+        const w = useUniform ? 1 : weights[i];
+        const share = (remainingTotal * w) / denom;
+        shares.set(i, share);
+        if (share >= max) cappedNow.push(i);
+      }
+
+      if (cappedNow.length === 0) {
+        for (const i of eligible) target[i] = shares.get(i) ?? 0;
+        remainingTotal = 0;
+        break;
+      }
+
+      for (const i of cappedNow) target[i] = max;
+      remainingTotal -= cappedNow.length * max;
+      eligible = eligible.filter((i) => !cappedNow.includes(i));
+      if (remainingTotal <= 0) break;
+    }
+  } else {
+    const sumW = sumWeights(active);
+    const useUniform = sumW <= 0 || allWeightsNonPositive(active);
+    const denom = useUniform ? active.length : sumW;
+    for (const i of active) {
+      const w = useUniform ? 1 : weights[i];
+      target[i] = (targetTotal * w) / denom;
+    }
+  }
+
+  const counts = new Array(n).fill(0);
+  let baseSum = 0;
+  const remainders = [];
+  for (const i of active) {
+    const t = Number.isFinite(target[i]) ? target[i] : 0;
+    let c = Math.floor(t);
+    if (hasCap) c = Math.min(max, c);
+    counts[i] = c;
+    baseSum += c;
+    const frac = t - Math.floor(t);
+    remainders.push({ i, frac });
+  }
+
+  let remain = targetTotal - baseSum;
+  if (remain > 0) {
+    remainders.sort((a, b) => b.frac - a.frac);
+    let k = 0;
+    while (remain > 0 && k < remainders.length) {
+      const i = remainders[k].i;
+      if (!hasCap || counts[i] < max) {
+        counts[i] += 1;
+        remain -= 1;
+      }
+      k += 1;
+    }
+
+    // If we still have remainder due to caps/zero weights, fill uniformly into any available capacity.
+    if (remain > 0) {
+      const candidates = active.filter((i) => !hasCap || counts[i] < max);
+      let guard = 0;
+      while (remain > 0 && candidates.length > 0 && guard < 1000) {
+        guard++;
+        for (const i of candidates) {
+          if (remain <= 0) break;
+          if (hasCap && counts[i] >= max) continue;
+          counts[i] += 1;
+          remain -= 1;
+        }
       }
     }
-    let guard = 0;
-    while (overflow > 0 && guard < 200000) {
-      guard++;
-      const i = Math.floor(Math.random() * n);
-      if (counts[i] >= max) continue;
-      counts[i] += 1;
-      overflow -= 1;
-    }
   }
 
-  for (let i = 0; i < n; i++) {
-    options[i].count = clampNonNegativeInt(counts[i]);
-  }
+  for (let i = 0; i < n; i++) options[i].count = clampNonNegativeInt(counts[i]);
 }
 
 function getActiveCandidateIds() {
@@ -1234,7 +1353,7 @@ function wireEvents() {
   document.addEventListener('click', (e) => {
     const target = e.target;
     if (!(target instanceof Node)) return;
-    const closables = [els.finderDetails, document.getElementById('randomSettings')].filter(Boolean);
+    const closables = [els.finderDetails, els.randomSettings].filter(Boolean);
     for (const el of closables) {
       if (!el || !el.hasAttribute('open')) continue;
       if (el.contains(target)) continue;
@@ -1263,6 +1382,7 @@ function main() {
   renderMatrixTable();
   renderFinder();
   if (els.finderDetails) bindDetailsPopover(els.finderDetails);
+  if (els.randomSettings) bindDetailsPopover(els.randomSettings);
   wireEvents();
   recomputeAndRender();
 }
